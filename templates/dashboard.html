@@ -4,23 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-Platform CRM Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#667eea',
+                        secondary: '#764ba2',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Multi-Platform CRM</h1>
-            <p>Marktplaats • Vinted • Depop • Facebook Marketplace</p>
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <!-- Header with Import Button -->
+        <header class="bg-white shadow-lg border-b-4 border-gradient-to-r from-purple-500 to-pink-500">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                            Multi-Platform CRM
+                        </h1>
+                        <p class="text-gray-600 text-sm mt-1">Marktplaats • Vinted • Depop • Facebook Marketplace</p>
+                    </div>
+                    <button onclick="showTab('import')" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        Import from Google Sheets
+                    </button>
+                </div>
+            </div>
         </header>
 
-        <nav>
-            <button onclick="showTab('dashboard')" class="active">Dashboard</button>
-            <button onclick="showTab('products')">Products</button>
-            <button onclick="showTab('sales')">Sales</button>
-            <button onclick="showTab('sync')">Sync</button>
-            <button onclick="showTab('settings')">Settings</button>
+        <!-- Navigation -->
+        <nav class="bg-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex space-x-4 overflow-x-auto py-3">
+                    <button onclick="showTab('dashboard')" class="tab-btn active px-4 py-2 rounded-lg font-medium transition-all duration-200">Dashboard</button>
+                    <button onclick="showTab('products')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all duration-200">Products</button>
+                    <button onclick="showTab('sales')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all duration-200">Sales</button>
+                    <button onclick="showTab('sync')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all duration-200">Sync</button>
+                    <button onclick="showTab('import')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all duration-200 text-purple-600">
+                        <span class="flex items-center gap-1">
+                            📊 Import
+                        </span>
+                    </button>
+                    <button onclick="showTab('settings')" class="tab-btn px-4 py-2 rounded-lg font-medium transition-all duration-200">Settings</button>
+                </div>
+            </div>
         </nav>
+
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
 
         <!-- Dashboard Tab -->
         <div id="dashboard" class="tab-content active">
@@ -113,6 +153,177 @@
             </div>
         </div>
 
+        <!-- Import Tab - Beautiful Tailwind Design -->
+        <div id="import" class="tab-content">
+            <div class="max-w-6xl mx-auto">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <h2 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+                        📊 Import from Google Sheets
+                    </h2>
+                    <p class="text-gray-600 text-lg">
+                        Import your existing inventory and sales data with one click
+                    </p>
+                </div>
+
+                <!-- Worksheet Input Card -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 mb-8 border-2 border-purple-100">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        📄 Worksheet Name
+                    </label>
+                    <input
+                        type="text"
+                        id="worksheet-name"
+                        value="Sheet1"
+                        placeholder="Enter worksheet name (e.g., Sheet1)"
+                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all duration-200 text-lg"
+                    />
+                    <p class="text-sm text-gray-500 mt-2">
+                        💡 This is the name of the sheet tab in your Google Sheets document
+                    </p>
+                </div>
+
+                <!-- Action Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- Preview Card -->
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-xl p-8 border-2 border-blue-200 hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                        <div class="text-6xl mb-4">👁️</div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-3">Preview Data</h3>
+                        <p class="text-gray-600 mb-6 text-sm leading-relaxed">
+                            See exactly what will be imported before you commit. Check your data structure and counts.
+                        </p>
+                        <button
+                            onclick="previewImport()"
+                            class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
+                        >
+                            <span class="btn-text">Preview Import</span>
+                            <span class="btn-loader hidden">
+                                <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Import Inventory Card -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-xl p-8 border-2 border-green-200 hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                        <div class="text-6xl mb-4">📦</div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-3">Import Inventory</h3>
+                        <p class="text-gray-600 mb-6 text-sm leading-relaxed">
+                            Import all unsold products from your Google Sheet. Perfect for syncing your current stock.
+                        </p>
+                        <button
+                            onclick="importInventory()"
+                            class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
+                        >
+                            <span class="btn-text">Import Inventory</span>
+                            <span class="btn-loader hidden">
+                                <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Import Sales Card -->
+                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl shadow-xl p-8 border-2 border-yellow-200 hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                        <div class="text-6xl mb-4">💰</div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-3">Import Sales</h3>
+                        <p class="text-gray-600 mb-6 text-sm leading-relaxed">
+                            Import your complete sales history. Automatically detects platform and calculates profits.
+                        </p>
+                        <button
+                            onclick="importSales()"
+                            class="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
+                        >
+                            <span class="btn-text">Import Sales</span>
+                            <span class="btn-loader hidden">
+                                <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Import All Card -->
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl shadow-xl p-8 border-2 border-purple-200 hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                        <div class="text-6xl mb-4">🚀</div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-3">Import Everything</h3>
+                        <p class="text-gray-600 mb-6 text-sm leading-relaxed">
+                            Import both inventory and sales in one go. The fastest way to get all your data in.
+                        </p>
+                        <button
+                            onclick="importAll()"
+                            class="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2"
+                        >
+                            <span class="btn-text">Import All Data</span>
+                            <span class="btn-loader hidden">
+                                <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="import-progress" class="hidden mb-8">
+                    <div class="bg-white rounded-2xl shadow-xl p-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-bold text-gray-800">Importing Data...</h3>
+                            <span id="progress-percentage" class="text-purple-600 font-bold text-lg">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                            <div id="progress-fill" class="bg-gradient-to-r from-purple-500 to-pink-600 h-4 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                        </div>
+                        <p id="progress-text" class="text-sm text-gray-600 mt-2 text-center">Starting...</p>
+                    </div>
+                </div>
+
+                <!-- Results Display -->
+                <div id="import-results" class="hidden">
+                    <div class="bg-white rounded-2xl shadow-xl p-8 border-2 border-green-200">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="text-4xl">✅</div>
+                            <h3 class="text-2xl font-bold text-gray-800">Import Complete!</h3>
+                        </div>
+                        <div id="import-results-content" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-6 mt-8 border-2 border-purple-200">
+                    <h4 class="font-bold text-gray-800 mb-3 text-lg">ℹ️ How it works:</h4>
+                    <ul class="text-gray-700 space-y-2 text-sm">
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-600 font-bold">•</span>
+                            <span><strong>Preview</strong> shows you what data will be imported without making any changes</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-600 font-bold">•</span>
+                            <span><strong>Inventory Import</strong> creates products from rows without a sale price</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-600 font-bold">•</span>
+                            <span><strong>Sales Import</strong> creates sales from rows with a sale price and date</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-600 font-bold">•</span>
+                            <span><strong>Platform Detection</strong> automatically detects Vinted sales (VAT > 0)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-purple-600 font-bold">•</span>
+                            <span><strong>Duplicate Protection</strong> prevents importing the same data twice</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <!-- Settings Tab -->
         <div id="settings" class="tab-content">
             <h2>Platform Connections</h2>
@@ -152,6 +363,79 @@
                 <p>Status: <span id="sheets-status">Not configured</span></p>
                 <input type="text" id="sheets-id" placeholder="Spreadsheet ID">
                 <button onclick="saveSheetsConfig()">Save Configuration</button>
+            </div>
+
+            <!-- Google Sheets Import Section -->
+            <div class="settings-section import-section">
+                <h2>📊 Import from Google Sheets</h2>
+                <p class="section-description">Import your existing inventory and sales data from Google Sheets</p>
+
+                <!-- Worksheet Name Input -->
+                <div class="import-input-group">
+                    <label for="worksheet-name">Worksheet Name:</label>
+                    <input type="text" id="worksheet-name" placeholder="Sheet1" value="Sheet1">
+                </div>
+
+                <!-- Import Actions Grid -->
+                <div class="import-actions-grid">
+                    <!-- Preview Card -->
+                    <div class="import-card preview-card">
+                        <div class="card-icon">👁️</div>
+                        <h3>Preview Data</h3>
+                        <p>See what will be imported before proceeding</p>
+                        <button onclick="previewImport()" class="btn-preview">
+                            <span class="btn-text">Preview</span>
+                            <span class="btn-loader" style="display: none;">⏳</span>
+                        </button>
+                    </div>
+
+                    <!-- Import Inventory Card -->
+                    <div class="import-card inventory-card">
+                        <div class="card-icon">📦</div>
+                        <h3>Import Inventory</h3>
+                        <p>Import unsold products from your sheet</p>
+                        <button onclick="importInventory()" class="btn-import-inventory">
+                            <span class="btn-text">Import Inventory</span>
+                            <span class="btn-loader" style="display: none;">⏳</span>
+                        </button>
+                    </div>
+
+                    <!-- Import Sales Card -->
+                    <div class="import-card sales-card">
+                        <div class="card-icon">💰</div>
+                        <h3>Import Sales</h3>
+                        <p>Import historical sales data</p>
+                        <button onclick="importSales()" class="btn-import-sales">
+                            <span class="btn-text">Import Sales</span>
+                            <span class="btn-loader" style="display: none;">⏳</span>
+                        </button>
+                    </div>
+
+                    <!-- Import All Card -->
+                    <div class="import-card all-card">
+                        <div class="card-icon">🚀</div>
+                        <h3>Import Everything</h3>
+                        <p>Import both inventory and sales at once</p>
+                        <button onclick="importAll()" class="btn-import-all">
+                            <span class="btn-text">Import All</span>
+                            <span class="btn-loader" style="display: none;">⏳</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Display Area -->
+                <div id="import-results" class="import-results" style="display: none;">
+                    <h3>Import Results</h3>
+                    <div id="import-results-content"></div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="import-progress" class="import-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <p id="progress-text">Importing...</p>
+                </div>
             </div>
         </div>
     </div>

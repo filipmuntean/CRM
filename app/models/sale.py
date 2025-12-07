@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, JSON, Enum
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, JSON, Enum, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -21,7 +21,10 @@ class Sale(Base):
     shipping_cost = Column(Float, default=0.0)
     platform_fee = Column(Float, default=0.0)
     payment_fee = Column(Float, default=0.0)
-    net_profit = Column(Float, nullable=True)  # sale_price - fees - original_cost
+    vat_amount = Column(Float, default=0.0)  # VAT to be returned (Vinted-specific)
+    original_cost = Column(Float, default=0.0)  # Product cost basis
+    net_profit = Column(Float, nullable=True)  # sale_price - fees - vat - original_cost
+    notes = Column(Text, nullable=True)  # Manual notes
 
     # Google Sheets sync
     synced_to_sheets = Column(Boolean, default=False)
@@ -33,9 +36,16 @@ class Sale(Base):
     # Relationships
     product = relationship("Product", back_populates="sales")
 
-    def calculate_net_profit(self, original_cost: float = 0.0):
-        """Calculate net profit after all fees"""
-        self.net_profit = self.sale_price - self.shipping_cost - self.platform_fee - self.payment_fee - original_cost
+    def calculate_net_profit(self):
+        """Calculate net profit after all fees, VAT, and original cost"""
+        self.net_profit = (
+            self.sale_price
+            - self.shipping_cost
+            - self.platform_fee
+            - self.payment_fee
+            - self.vat_amount
+            - self.original_cost
+        )
         return self.net_profit
 
     def __repr__(self):

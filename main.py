@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import init_db
 from app.core.config import settings
-from app.api import products, sync, sales
+from app.api import products, sync, sales, sheets
 
 # Initialize database
 init_db()
@@ -32,6 +32,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(products.router, prefix="/api")
 app.include_router(sync.router, prefix="/api")
 app.include_router(sales.router, prefix="/api")
+app.include_router(sheets.router)
 
 
 @app.get("/", response_class=HTMLResponse)

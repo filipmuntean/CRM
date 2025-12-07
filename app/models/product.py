@@ -36,6 +36,7 @@ class Product(Base):
     # Relationships
     platform_listings = relationship("PlatformListing", back_populates="product", cascade="all, delete-orphan")
     sales = relationship("Sale", back_populates="product", cascade="all, delete-orphan")
+    metrics = relationship("ProductMetrics", back_populates="product", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Product(id={self.id}, title='{self.title}', status='{self.status}')>"

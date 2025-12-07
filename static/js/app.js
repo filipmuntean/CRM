@@ -298,3 +298,215 @@ function saveSheetsConfig() {
 document.addEventListener('DOMContentLoaded', () => {
     loadDashboard();
 });
+
+// ============================================
+// GOOGLE SHEETS IMPORT FUNCTIONS
+// ============================================
+
+async function previewImport() {
+    const worksheetName = document.getElementById('worksheet-name').value || 'Sheet1';
+    const button = event.target.closest('button');
+    const btnText = button.querySelector('.btn-text');
+    const btnLoader = button.querySelector('.btn-loader');
+
+    // Show loading state
+    btnText.classList.add('hidden');
+    btnLoader.classList.remove('hidden');
+    button.disabled = true;
+
+    try {
+        const url = `/api/sheets/preview?worksheet_name=${encodeURIComponent(worksheetName)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.success) {
+            displayPreviewResults(data);
+        } else {
+            showError('Preview failed: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        showError('Failed to preview data: ' + error.message);
+    } finally {
+        // Reset button state
+        btnText.classList.remove('hidden');
+        btnLoader.classList.add('hidden');
+        button.disabled = false;
+    }
+}
+
+async function importInventory() {
+    const worksheetName = document.getElementById('worksheet-name').value || 'Sheet1';
+
+    if (!confirm('This will import unsold products from Google Sheets. Continue?')) {
+        return;
+    }
+
+    const button = event.target.closest('button');
+    await performImport('/api/sheets/import/inventory', worksheetName, button, 'inventory');
+}
+
+async function importSales() {
+    const worksheetName = document.getElementById('worksheet-name').value || 'Sheet1';
+
+    if (!confirm('This will import sales data from Google Sheets. Continue?')) {
+        return;
+    }
+
+    const button = event.target.closest('button');
+    await performImport('/api/sheets/import/sales', worksheetName, button, 'sales');
+}
+
+async function importAll() {
+    const worksheetName = document.getElementById('worksheet-name').value || 'Sheet1';
+
+    if (!confirm('This will import ALL data (inventory + sales) from Google Sheets. This may take a while. Continue?')) {
+        return;
+    }
+
+    const button = event.target.closest('button');
+    await performImport('/api/sheets/import/all', worksheetName, button, 'all');
+}
+
+async function performImport(endpoint, worksheetName, button, type) {
+    const btnText = button.querySelector('.btn-text');
+    const btnLoader = button.querySelector('.btn-loader');
+    const progressDiv = document.getElementById('import-progress');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const progressPercentage = document.getElementById('progress-percentage');
+
+    // Show loading state
+    btnText.classList.add('hidden');
+    btnLoader.classList.remove('hidden');
+    button.disabled = true;
+
+    // Show progress bar
+    progressDiv.classList.remove('hidden');
+    progressFill.style.width = '0%';
+    progressText.textContent = 'Starting import...';
+    if (progressPercentage) progressPercentage.textContent = '0%';
+
+    // Hide previous results
+    document.getElementById('import-results').classList.add('hidden');
+
+    try {
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += 5;
+            if (progress < 90) {
+                progressFill.style.width = progress + '%';
+                progressText.textContent = 'Importing... ' + progress + '%';
+                if (progressPercentage) progressPercentage.textContent = progress + '%';
+            }
+        }, 300);
+
+        const url = endpoint + '?worksheet_name=' + encodeURIComponent(worksheetName);
+        const response = await fetch(url, {
+            method: 'POST'
+        });
+
+        clearInterval(progressInterval);
+        progressFill.style.width = '100%';
+        progressText.textContent = 'Processing results...';
+        if (progressPercentage) progressPercentage.textContent = '100%';
+
+        const data = await response.json();
+
+        // Hide progress bar after a short delay
+        setTimeout(() => {
+            progressDiv.classList.add('hidden');
+        }, 1000);
+
+        if (data.success) {
+            displayImportResults(data, type);
+            showImportSuccess(data.message);
+
+            // Refresh dashboard stats
+            if (typeof loadDashboard === 'function') {
+                loadDashboard();
+            }
+        } else {
+            showError('Import failed: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        showError('Failed to import data: ' + error.message);
+        progressDiv.classList.add('hidden');
+    } finally {
+        // Reset button state
+        btnText.classList.remove('hidden');
+        btnLoader.classList.add('hidden');
+        button.disabled = false;
+    }
+}
+
+function displayPreviewResults(data) {
+    const resultsDiv = document.getElementById('import-results');
+    const resultsContent = document.getElementById('import-results-content');
+
+    let html = '<div class="result-item"><span class="result-label">Total Rows:</span><span class="result-value">' + data.total_rows + '</span></div>';
+    html += '<div class="result-item"><span class="result-label">Sold Items:</span><span class="result-value result-success">' + data.sold_items + '</span></div>';
+    html += '<div class="result-item"><span class="result-label">Unsold Items (Inventory):</span><span class="result-value result-warning">' + data.unsold_items + '</span></div>';
+    html += '<div class="result-item"><span class="result-label">Unique Products:</span><span class="result-value">' + data.unique_products + '</span></div>';
+
+    // Sample sold items
+    if (data.sample_sold_items && data.sample_sold_items.length > 0) {
+        html += '<br><strong>Sample Sold Items:</strong><br>';
+        data.sample_sold_items.forEach(item => {
+            html += '<div class="result-item"><span>' + item.title + '</span><span class="result-value result-success">€' + item.sale_price + '</span></div>';
+        });
+    }
+
+    // Sample unsold items
+    if (data.sample_unsold_items && data.sample_unsold_items.length > 0) {
+        html += '<br><strong>Sample Unsold Items:</strong><br>';
+        data.sample_unsold_items.forEach(item => {
+            html += '<div class="result-item"><span>' + item.title + '</span><span class="result-value">€' + item.investment + '</span></div>';
+        });
+    }
+
+    resultsContent.innerHTML = html;
+    resultsDiv.classList.remove('hidden');
+}
+
+function displayImportResults(data, type) {
+    const resultsDiv = document.getElementById('import-results');
+    const resultsContent = document.getElementById('import-results-content');
+
+    let html = '';
+
+    if (type === 'inventory' || type === 'all') {
+        const inventoryResults = type === 'all' ? data.inventory_results : data.results;
+        html += '<h4>📦 Inventory Import</h4>';
+        html += '<div class="result-item"><span class="result-label">Total Processed:</span><span class="result-value">' + inventoryResults.total_processed + '</span></div>';
+        html += '<div class="result-item"><span class="result-label">New Products Created:</span><span class="result-value result-success">' + inventoryResults.created + '</span></div>';
+        html += '<div class="result-item"><span class="result-label">Existing Products Matched:</span><span class="result-value result-warning">' + inventoryResults.matched + '</span></div>';
+
+        if (inventoryResults.errors && inventoryResults.errors.length > 0) {
+            html += '<div class="result-item"><span class="result-label">Errors:</span><span class="result-value result-error">' + inventoryResults.errors.length + '</span></div>';
+        }
+    }
+
+    if (type === 'sales' || type === 'all') {
+        const salesResults = type === 'all' ? data.sales_results : data.results;
+        html += '<h4>💰 Sales Import</h4>';
+        html += '<div class="result-item"><span class="result-label">Total Processed:</span><span class="result-value">' + salesResults.total_processed + '</span></div>';
+        html += '<div class="result-item"><span class="result-label">Sales Imported:</span><span class="result-value result-success">' + salesResults.imported + '</span></div>';
+        html += '<div class="result-item"><span class="result-label">Duplicates Skipped:</span><span class="result-value result-warning">' + salesResults.skipped + '</span></div>';
+
+        if (salesResults.errors && salesResults.errors.length > 0) {
+            html += '<div class="result-item"><span class="result-label">Errors:</span><span class="result-value result-error">' + salesResults.errors.length + '</span></div>';
+        }
+    }
+
+    resultsContent.innerHTML = html;
+    resultsDiv.classList.remove('hidden');
+}
+
+function showImportSuccess(message) {
+    alert('✅ ' + message);
+}
+
+function showError(message) {
+    alert('❌ ' + message);
+}
