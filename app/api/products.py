@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
+import time
 from app.core.database import get_db
 from app.models.product import Product, ProductStatus
 from app.models.platform_listing import Platform
 from app.schemas.product import Product as ProductSchema, ProductCreate, ProductUpdate, ProductWithListings
 from app.services.sync_service import SyncService
+from app.utils.product_utils import generate_sku, calculate_investment
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -41,7 +43,26 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 @router.post("/", response_model=ProductSchema)
 def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     """Create a new product"""
-    db_product = Product(**product.dict())
+    # Convert product to dict and remove investment_calculation field
+    product_data = product.dict(exclude={"investment_calculation"})
+
+    # Generate unique SKU
+    sku = generate_sku(product.title, product.category)
+
+    # Ensure SKU is unique
+    while db.query(Product).filter(Product.sku == sku).first():
+        sku = generate_sku(product.title + str(time.time()), product.category)
+
+    product_data["sku"] = sku
+
+    # Calculate investment if expression provided
+    if product.investment_calculation:
+        try:
+            product_data["investment_per_product"] = calculate_investment(product.investment_calculation)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    db_product = Product(**product_data)
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
@@ -60,8 +81,18 @@ def update_product(
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    # Get update data and exclude investment_calculation field
+    update_data = product_update.dict(exclude_unset=True, exclude={"investment_calculation"})
+
+    # Calculate investment if expression provided
+    if product_update.investment_calculation is not None:
+        try:
+            update_data["investment_per_product"] = calculate_investment(product_update.investment_calculation)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
     # Update fields
-    for field, value in product_update.dict(exclude_unset=True).items():
+    for field, value in update_data.items():
         setattr(db_product, field, value)
 
     # Mark all platform listings as needing sync
@@ -161,8 +192,8 @@ async def sync_product_to_platform(
 async def mark_product_sold(
     product_id: int,
     platform: Platform,
-    sale_price: Optional[float] = None,
     background_tasks: BackgroundTasks,
+    sale_price: Optional[float] = None,
     db: Session = Depends(get_db)
 ):
     """Mark a product as sold on a specific platform"""

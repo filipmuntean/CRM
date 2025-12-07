@@ -16,9 +16,12 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True)
+    sku = Column(String(100), unique=True, nullable=False, index=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     price = Column(Float, nullable=False)
+    quantity = Column(Integer, nullable=False, default=1)
+    investment_per_product = Column(Float, nullable=True)
     images = Column(JSON, default=list)  # List of image URLs
     category = Column(String(100), nullable=True)
     size = Column(String(50), nullable=True)

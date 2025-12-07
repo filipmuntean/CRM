@@ -96,7 +96,10 @@ async function loadProducts() {
             <div class="product-card" onclick="viewProduct(${product.id})">
                 ${product.images.length > 0 ? `<img src="${product.images[0]}" alt="${product.title}">` : ''}
                 <h4>${product.title}</h4>
+                <p class="sku">SKU: ${product.sku}</p>
                 <p class="price">€${product.price.toFixed(2)}</p>
+                <p class="quantity">Qty: ${product.quantity}</p>
+                ${product.investment_per_product ? `<p class="investment">Investment: €${product.investment_per_product.toFixed(2)}</p>` : ''}
                 <span class="status-badge status-${product.status}">${product.status}</span>
             </div>
         `).join('');
@@ -127,6 +130,8 @@ document.getElementById('add-product-form')?.addEventListener('submit', async (e
         title: document.getElementById('product-title').value,
         description: document.getElementById('product-description').value,
         price: parseFloat(document.getElementById('product-price').value),
+        quantity: parseInt(document.getElementById('product-quantity').value) || 1,
+        investment_calculation: document.getElementById('product-investment').value || null,
         category: document.getElementById('product-category').value,
         brand: document.getElementById('product-brand').value,
         size: document.getElementById('product-size').value,

@@ -181,10 +181,29 @@ nav button.active {
     color: #2c3e50;
 }
 
+.product-card .sku {
+    font-size: 0.85em;
+    color: #7f8c8d;
+    margin-bottom: 5px;
+    font-family: monospace;
+}
+
 .product-card .price {
     font-size: 1.3em;
     font-weight: bold;
     color: #27ae60;
+    margin-bottom: 8px;
+}
+
+.product-card .quantity {
+    font-size: 0.9em;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.product-card .investment {
+    font-size: 0.9em;
+    color: #e67e22;
     margin-bottom: 8px;
 }
 
