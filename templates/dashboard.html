@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Platform CRM Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Multi-Platform CRM</h1>
+            <p>Marktplaats • Vinted • Depop • Facebook Marketplace</p>
+        </header>
+
+        <nav>
+            <button onclick="showTab('dashboard')" class="active">Dashboard</button>
+            <button onclick="showTab('products')">Products</button>
+            <button onclick="showTab('sales')">Sales</button>
+            <button onclick="showTab('sync')">Sync</button>
+            <button onclick="showTab('settings')">Settings</button>
+        </nav>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Products</h3>
+                    <p class="stat-value" id="total-products">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Sales</h3>
+                    <p class="stat-value" id="total-sales">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Revenue</h3>
+                    <p class="stat-value" id="total-revenue">€-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Net Profit</h3>
+                    <p class="stat-value" id="net-profit">€-</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>Sales by Platform</h3>
+                <canvas id="platformChart"></canvas>
+            </div>
+
+            <div class="sync-status">
+                <h3>Sync Status</h3>
+                <div id="sync-status-content"></div>
+            </div>
+        </div>
+
+        <!-- Products Tab -->
+        <div id="products" class="tab-content">
+            <div class="toolbar">
+                <button onclick="showAddProductModal()" class="btn-primary">+ Add Product</button>
+                <button onclick="importProducts()" class="btn-secondary">Import from Platform</button>
+            </div>
+
+            <div class="products-grid" id="products-list"></div>
+        </div>
+
+        <!-- Sales Tab -->
+        <div id="sales" class="tab-content">
+            <div class="filter-bar">
+                <select id="sales-platform-filter" onchange="filterSales()">
+                    <option value="">All Platforms</option>
+                    <option value="marktplaats">Marktplaats</option>
+                    <option value="vinted">Vinted</option>
+                    <option value="depop">Depop</option>
+                    <option value="facebook_marketplace">Facebook Marketplace</option>
+                </select>
+                <select id="sales-period-filter" onchange="filterSales()">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="">All time</option>
+                </select>
+            </div>
+
+            <table class="sales-table" id="sales-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Product</th>
+                        <th>Platform</th>
+                        <th>Sale Price</th>
+                        <th>Net Profit</th>
+                        <th>Synced to Sheets</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-tbody"></tbody>
+            </table>
+        </div>
+
+        <!-- Sync Tab -->
+        <div id="sync" class="tab-content">
+            <div class="sync-actions">
+                <button onclick="syncAll()" class="btn-primary">Sync All Products</button>
+                <button onclick="checkSoldItems()" class="btn-secondary">Check for Sold Items</button>
+                <button onclick="refreshSyncStats()" class="btn-secondary">Refresh Stats</button>
+            </div>
+
+            <div class="sync-stats" id="sync-stats-detail"></div>
+
+            <div class="sync-log">
+                <h3>Sync Log</h3>
+                <div id="sync-log-content"></div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <h2>Platform Connections</h2>
+
+            <div class="settings-section">
+                <h3>Marktplaats</h3>
+                <p>Status: <span id="marktplaats-status">Not configured</span></p>
+                <button onclick="configureMarktplaats()">Configure OAuth</button>
+            </div>
+
+            <div class="settings-section">
+                <h3>Vinted</h3>
+                <p>Status: <span id="vinted-status">Not configured</span></p>
+                <input type="email" id="vinted-email" placeholder="Email">
+                <input type="password" id="vinted-password" placeholder="Password">
+                <button onclick="saveVintedCreds()">Save Credentials</button>
+            </div>
+
+            <div class="settings-section">
+                <h3>Depop</h3>
+                <p>Status: <span id="depop-status">Not configured</span></p>
+                <input type="text" id="depop-username" placeholder="Username">
+                <input type="password" id="depop-password" placeholder="Password">
+                <button onclick="saveDepopCreds()">Save Credentials</button>
+            </div>
+
+            <div class="settings-section">
+                <h3>Facebook Marketplace</h3>
+                <p>Status: <span id="facebook-status">Not configured</span></p>
+                <input type="email" id="facebook-email" placeholder="Email">
+                <input type="password" id="facebook-password" placeholder="Password">
+                <button onclick="saveFacebookCreds()">Save Credentials</button>
+            </div>
+
+            <div class="settings-section">
+                <h3>Google Sheets</h3>
+                <p>Status: <span id="sheets-status">Not configured</span></p>
+                <input type="text" id="sheets-id" placeholder="Spreadsheet ID">
+                <button onclick="saveSheetsConfig()">Save Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="add-product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddProductModal()">&times;</span>
+            <h2>Add New Product</h2>
+            <form id="add-product-form">
+                <input type="text" id="product-title" placeholder="Title" required>
+                <textarea id="product-description" placeholder="Description"></textarea>
+                <input type="number" id="product-price" placeholder="Price" step="0.01" required>
+                <input type="text" id="product-category" placeholder="Category">
+                <input type="text" id="product-brand" placeholder="Brand">
+                <input type="text" id="product-size" placeholder="Size">
+                <select id="product-condition">
+                    <option value="">Select Condition</option>
+                    <option value="new">New</option>
+                    <option value="like-new">Like New</option>
+                    <option value="good">Good</option>
+                    <option value="fair">Fair</option>
+                </select>
+
+                <h4>Cross-post to:</h4>
+                <div class="platform-checkboxes">
+                    <label><input type="checkbox" name="platforms" value="marktplaats"> Marktplaats</label>
+                    <label><input type="checkbox" name="platforms" value="vinted"> Vinted</label>
+                    <label><input type="checkbox" name="platforms" value="depop"> Depop</label>
+                    <label><input type="checkbox" name="platforms" value="facebook_marketplace"> Facebook</label>
+                </div>
+
+                <button type="submit" class="btn-primary">Create Product</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
