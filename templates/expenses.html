@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenses - CRM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* Navigation */
+        .nav {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a73e8;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #5f6368;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            background: #f1f3f4;
+        }
+
+        .nav-tab.active {
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Section headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #202124;
+        }
+
+        /* Cards */
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1557b0;
+        }
+
+        .btn-secondary {
+            background: #f1f3f4;
+            color: #5f6368;
+        }
+
+        .btn-secondary:hover {
+            background: #e8eaed;
+        }
+
+        .btn-danger {
+            background: #ea4335;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c5221f;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        /* Toggle buttons */
+        .toggle-group {
+            display: flex;
+            gap: 4px;
+            background: #f1f3f4;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .toggle-btn {
+            padding: 6px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #5f6368;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn.active {
+            background: white;
+            color: #1a73e8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 500;
+            font-size: 12px;
+            color: #5f6368;
+            text-transform: uppercase;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .positive { color: #34a853; }
+        .negative { color: #ea4335; }
+
+        /* Status badge */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge.active {
+            background: #e6f4ea;
+            color: #137333;
+        }
+
+        .status-badge.inactive {
+            background: #fce8e6;
+            color: #c5221f;
+        }
+
+        /* Forms */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #5f6368;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 8px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+
+        /* Collapsible months */
+        .month-group {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .month-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .month-header:hover {
+            background: #f1f3f4;
+        }
+
+        .month-name {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .month-name .arrow {
+            transition: transform 0.2s;
+        }
+
+        .month-name .arrow.expanded {
+            transform: rotate(90deg);
+        }
+
+        .month-totals {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+        }
+
+        .month-totals span {
+            color: #5f6368;
+        }
+
+        .month-totals strong {
+            color: #202124;
+        }
+
+        .month-content {
+            display: none;
+            padding: 0;
+        }
+
+        .month-content.expanded {
+            display: block;
+        }
+
+        .month-content table {
+            margin: 0;
+        }
+
+        .month-content th {
+            background: #fff;
+        }
+
+        /* Category cards */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .category-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .category-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .category-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .category-stat {
+            font-size: 13px;
+        }
+
+        .category-stat-label {
+            color: #5f6368;
+        }
+
+        .category-stat-value {
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        /* Year selector */
+        .year-select {
+            padding: 6px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #5f6368;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #5f6368;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* Batch link */
+        .batch-link {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .batch-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-title">ReLoomer CRM</div>
+        <div class="nav-tabs">
+            <a href="/overview" class="nav-tab">Overview</a>
+            <a href="/inventory" class="nav-tab">Inventory</a>
+            <a href="/expenses" class="nav-tab active">Expenses</a>
+            <a href="/listings" class="nav-tab">Listings</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Recurring Expenses Section -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Recurring Expenses</div>
+                <button class="btn btn-primary" onclick="openRecurringModal()">+ Add Recurring</button>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th class="text-right">Amount/Month</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recurringTable">
+                        <tr><td colspan="7" class="empty-state">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- One-time Expenses Section -->
+        <div class="card">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div class="card-title">One-time Expenses</div>
+                    <select class="year-select" id="yearSelect" onchange="loadExpenses()">
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" onclick="setView('monthly')" id="monthlyBtn">Monthly</button>
+                        <button class="toggle-btn" onclick="setView('category')" id="categoryBtn">Category</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="openExpenseModal()">+ Add Expense</button>
+                </div>
+            </div>
+            <div class="card-body" id="expensesContent">
+                <div class="empty-state">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Recurring Expense Modal -->
+    <div class="modal-overlay" id="recurringModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Add Recurring Expense</div>
+                <button class="modal-close" onclick="closeRecurringModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="recurringCategory">
+                            <option value="">Select category...</option>
+                            <option value="Storage">Storage</option>
+                            <option value="Shipping">Shipping</option>
+                            <option value="Platform Fees">Platform Fees</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Software/Tools">Software/Tools</option>
+                            <option value="Other">Other (custom)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="recurringCustomCategoryGroup" style="display: none;">
+                        <label>Custom Category</label>
+                        <input type="text" id="recurringCustomCategory" placeholder="Enter category name">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Amount (per month)</label>
+                        <input type="number" id="recurringAmount" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="recurringDescription" placeholder="e.g., Storage unit rental">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" id="recurringStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date (optional)</label>
+                        <input type="date" id="recurringEndDate">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRecurringModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveRecurringExpense()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add One-time Expense Modal -->
+    <div class="modal-overlay" id="expenseModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Add Expense</div>
+                <button class="modal-close" onclick="closeExpenseModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="expenseCategory">
+                            <option value="">Select category...</option>
+                            <option value="Storage">Storage</option>
+                            <option value="Shipping">Shipping</option>
+                            <option value="Platform Fees">Platform Fees</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Software/Tools">Software/Tools</option>
+                            <option value="Other">Other (custom)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="expenseCustomCategoryGroup" style="display: none;">
+                        <label>Custom Category</label>
+                        <input type="text" id="expenseCustomCategory" placeholder="Enter category name">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" id="expenseAmount" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="expenseDate">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="expenseDescription" placeholder="e.g., Shipping supplies">
+                    </div>
+                    <div class="form-group">
+                        <label>Link to Batch (optional)</label>
+                        <select id="expenseBatch">
+                            <option value="">No batch (general expense)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeExpenseModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveExpense()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentView = 'monthly';
+        let batches = [];
+
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('nl-NL', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(value);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('nl-NL');
+        }
+
+        // Category icons and colors
+        const categoryStyles = {
+            'Storage': { icon: '📦', color: '#e8f0fe' },
+            'Shipping': { icon: '🚚', color: '#fef7e0' },
+            'Platform Fees': { icon: '💳', color: '#fce8e6' },
+            'Packaging': { icon: '📋', color: '#e6f4ea' },
+            'Marketing': { icon: '📢', color: '#f3e8fd' },
+            'Software/Tools': { icon: '💻', color: '#e8f5e9' },
+            'Other': { icon: '📎', color: '#f5f5f5' }
+        };
+
+        function getCategoryStyle(category) {
+            return categoryStyles[category] || categoryStyles['Other'];
+        }
+
+        // Load recurring expenses
+        async function loadRecurringExpenses() {
+            try {
+                const response = await fetch('/api/inventory/recurring-expenses');
+                const data = await response.json();
+
+                const tbody = document.getElementById('recurringTable');
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No recurring expenses yet</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(exp => `
+                    <tr>
+                        <td>${exp.category}</td>
+                        <td>${exp.description || '-'}</td>
+                        <td class="text-right negative">${formatCurrency(exp.amount)}</td>
+                        <td>${formatDate(exp.start_date)}</td>
+                        <td>${exp.end_date ? formatDate(exp.end_date) : 'Ongoing'}</td>
+                        <td>
+                            <span class="status-badge ${exp.is_active ? 'active' : 'inactive'}">
+                                ${exp.is_active ? 'Active' : 'Paused'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="toggleRecurring(${exp.id}, ${exp.is_active})">
+                                ${exp.is_active ? 'Pause' : 'Resume'}
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteRecurring(${exp.id})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading recurring expenses:', error);
+            }
+        }
+
+        // Load expenses (monthly or category view)
+        async function loadExpenses() {
+            const year = document.getElementById('yearSelect').value;
+
+            if (currentView === 'monthly') {
+                await loadMonthlyView(year);
+            } else {
+                await loadCategoryView(year);
+            }
+        }
+
+        async function loadMonthlyView(year) {
+            try {
+                const response = await fetch(`/api/inventory/expenses/summary/monthly?year=${year}`);
+                const data = await response.json();
+
+                const container = document.getElementById('expensesContent');
+
+                if (data.every(m => m.total === 0)) {
+                    container.innerHTML = '<div class="empty-state">No expenses recorded for this year</div>';
+                    return;
+                }
+
+                container.innerHTML = data.filter(m => m.total > 0).map(month => `
+                    <div class="month-group">
+                        <div class="month-header" onclick="toggleMonth('${month.month_name}')">
+                            <div class="month-name">
+                                <span class="arrow" id="arrow-${month.month_name}">▶</span>
+                                ${month.month_name} ${month.year}
+                            </div>
+                            <div class="month-totals">
+                                <span>One-time: <strong class="negative">${formatCurrency(month.one_time_total)}</strong></span>
+                                <span>Recurring: <strong class="negative">${formatCurrency(month.recurring_total)}</strong></span>
+                                <span>Total: <strong class="negative">${formatCurrency(month.total)}</strong></span>
+                            </div>
+                        </div>
+                        <div class="month-content" id="content-${month.month_name}">
+                            ${month.expenses.length > 0 ? `
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Category</th>
+                                            <th>Description</th>
+                                            <th>Batch</th>
+                                            <th class="text-right">Amount</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${month.expenses.map(exp => `
+                                            <tr>
+                                                <td>${formatDate(exp.expense_date)}</td>
+                                                <td>${exp.category}</td>
+                                                <td>${exp.description || '-'}</td>
+                                                <td>${exp.batch_name ? `<a href="/overview" class="batch-link">${exp.batch_name}</a>` : '-'}</td>
+                                                <td class="text-right negative">${formatCurrency(exp.amount)}</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-danger" onclick="deleteExpense(${exp.id})">Delete</button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            ` : '<div class="empty-state">Only recurring expenses this month</div>'}
+                        </div>
+                    </div>
+                `).join('');
+
+                if (container.innerHTML === '') {
+                    container.innerHTML = '<div class="empty-state">No expenses recorded for this year</div>';
+                }
+            } catch (error) {
+                console.error('Error loading monthly view:', error);
+            }
+        }
+
+        async function loadCategoryView(year) {
+            try {
+                const response = await fetch(`/api/inventory/expenses/summary/category?year=${year}`);
+                const data = await response.json();
+
+                const container = document.getElementById('expensesContent');
+
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No expenses recorded for this year</div>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="category-grid">
+                        ${data.map(cat => {
+                            const style = getCategoryStyle(cat.category);
+                            return `
+                                <div class="category-card">
+                                    <div class="category-name">
+                                        <div class="category-icon" style="background: ${style.color}">${style.icon}</div>
+                                        ${cat.category}
+                                    </div>
+                                    <div class="category-stats">
+                                        <div class="category-stat">
+                                            <div class="category-stat-label">Total</div>
+                                            <div class="category-stat-value negative">${formatCurrency(cat.total)}</div>
+                                        </div>
+                                        <div class="category-stat">
+                                            <div class="category-stat-label">Entries</div>
+                                            <div class="category-stat-value">${cat.count}</div>
+                                        </div>
+                                        <div class="category-stat">
+                                            <div class="category-stat-label">Avg/Month</div>
+                                            <div class="category-stat-value negative">${formatCurrency(cat.avg_per_month)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading category view:', error);
+            }
+        }
+
+        function toggleMonth(monthName) {
+            const content = document.getElementById(`content-${monthName}`);
+            const arrow = document.getElementById(`arrow-${monthName}`);
+
+            content.classList.toggle('expanded');
+            arrow.classList.toggle('expanded');
+        }
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('monthlyBtn').classList.toggle('active', view === 'monthly');
+            document.getElementById('categoryBtn').classList.toggle('active', view === 'category');
+            loadExpenses();
+        }
+
+        // Load batches for the dropdown
+        async function loadBatches() {
+            try {
+                const response = await fetch('/api/inventory/batches');
+                batches = await response.json();
+
+                const select = document.getElementById('expenseBatch');
+                select.innerHTML = '<option value="">No batch (general expense)</option>' +
+                    batches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading batches:', error);
+            }
+        }
+
+        // Modal functions
+        function openRecurringModal() {
+            document.getElementById('recurringModal').classList.add('show');
+            document.getElementById('recurringStartDate').valueAsDate = new Date();
+        }
+
+        function closeRecurringModal() {
+            document.getElementById('recurringModal').classList.remove('show');
+            // Clear form
+            document.getElementById('recurringCategory').value = '';
+            document.getElementById('recurringAmount').value = '';
+            document.getElementById('recurringDescription').value = '';
+            document.getElementById('recurringStartDate').value = '';
+            document.getElementById('recurringEndDate').value = '';
+        }
+
+        function openExpenseModal() {
+            document.getElementById('expenseModal').classList.add('show');
+            document.getElementById('expenseDate').valueAsDate = new Date();
+        }
+
+        function closeExpenseModal() {
+            document.getElementById('expenseModal').classList.remove('show');
+            // Clear form
+            document.getElementById('expenseCategory').value = '';
+            document.getElementById('expenseAmount').value = '';
+            document.getElementById('expenseDescription').value = '';
+            document.getElementById('expenseDate').value = '';
+            document.getElementById('expenseBatch').value = '';
+        }
+
+        // Handle custom category toggle
+        document.getElementById('recurringCategory').addEventListener('change', function() {
+            const customGroup = document.getElementById('recurringCustomCategoryGroup');
+            customGroup.style.display = this.value === 'Other' ? 'flex' : 'none';
+        });
+
+        document.getElementById('expenseCategory').addEventListener('change', function() {
+            const customGroup = document.getElementById('expenseCustomCategoryGroup');
+            customGroup.style.display = this.value === 'Other' ? 'flex' : 'none';
+        });
+
+        // Save functions
+        async function saveRecurringExpense() {
+            let category = document.getElementById('recurringCategory').value;
+            if (category === 'Other') {
+                category = document.getElementById('recurringCustomCategory').value;
+            }
+
+            const data = {
+                category: category,
+                amount: parseFloat(document.getElementById('recurringAmount').value),
+                description: document.getElementById('recurringDescription').value || null,
+                start_date: document.getElementById('recurringStartDate').value,
+                end_date: document.getElementById('recurringEndDate').value || null,
+                is_active: true
+            };
+
+            try {
+                const response = await fetch('/api/inventory/recurring-expenses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeRecurringModal();
+                    loadRecurringExpenses();
+                    loadExpenses();
+                } else {
+                    alert('Error saving recurring expense');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving recurring expense');
+            }
+        }
+
+        async function saveExpense() {
+            let category = document.getElementById('expenseCategory').value;
+            if (category === 'Other') {
+                category = document.getElementById('expenseCustomCategory').value;
+            }
+
+            const batchId = document.getElementById('expenseBatch').value;
+
+            const data = {
+                category: category,
+                amount: parseFloat(document.getElementById('expenseAmount').value),
+                description: document.getElementById('expenseDescription').value || null,
+                expense_date: document.getElementById('expenseDate').value,
+                batch_id: batchId ? parseInt(batchId) : null
+            };
+
+            try {
+                const response = await fetch('/api/inventory/expenses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeExpenseModal();
+                    loadExpenses();
+                } else {
+                    alert('Error saving expense');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving expense');
+            }
+        }
+
+        async function toggleRecurring(id, currentStatus) {
+            try {
+                const response = await fetch(`/api/inventory/recurring-expenses/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_active: !currentStatus })
+                });
+
+                if (response.ok) {
+                    loadRecurringExpenses();
+                    loadExpenses();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function deleteRecurring(id) {
+            if (!confirm('Delete this recurring expense?')) return;
+
+            try {
+                const response = await fetch(`/api/inventory/recurring-expenses/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadRecurringExpenses();
+                    loadExpenses();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function deleteExpense(id) {
+            if (!confirm('Delete this expense?')) return;
+
+            try {
+                const response = await fetch(`/api/inventory/expenses/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadExpenses();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecurringExpenses();
+            loadExpenses();
+            loadBatches();
+        });
+    </script>
+</body>
+</html>

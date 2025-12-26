@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import init_db
 from app.core.config import settings
-from app.api import products, sync, sales
+from app.api import products, sync, sales, inventory
 
 # Initialize database
 init_db()
@@ -32,12 +32,41 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(products.router, prefix="/api")
 app.include_router(sync.router, prefix="/api")
 app.include_router(sales.router, prefix="/api")
+app.include_router(inventory.router, prefix="/api")
 
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    """Root endpoint - returns dashboard HTML"""
-    with open("templates/dashboard.html", "r") as f:
+    """Root endpoint - redirects to overview"""
+    with open("templates/overview.html", "r") as f:
+        return f.read()
+
+
+@app.get("/overview", response_class=HTMLResponse)
+async def overview_page():
+    """Financial overview page"""
+    with open("templates/overview.html", "r") as f:
+        return f.read()
+
+
+@app.get("/inventory", response_class=HTMLResponse)
+async def inventory_page():
+    """Inventory management page"""
+    with open("templates/inventory.html", "r") as f:
+        return f.read()
+
+
+@app.get("/expenses", response_class=HTMLResponse)
+async def expenses_page():
+    """Expenses management page"""
+    with open("templates/expenses.html", "r") as f:
+        return f.read()
+
+
+@app.get("/listings", response_class=HTMLResponse)
+async def listings_page():
+    """Product listings and platform sync page"""
+    with open("templates/listings.html", "r") as f:
         return f.read()
 
 

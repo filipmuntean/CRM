@@ -43,13 +43,6 @@ class Product(ProductBase):
         from_attributes = True
 
 
-class ProductWithListings(Product):
-    platform_listings: List["PlatformListingInfo"] = []
-
-    class Config:
-        from_attributes = True
-
-
 class PlatformListingInfo(BaseModel):
     id: int
     platform: str
@@ -57,6 +50,13 @@ class PlatformListingInfo(BaseModel):
     listing_url: Optional[str]
     platform_status: str
     last_synced_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class ProductWithListings(Product):
+    platform_listings: List[PlatformListingInfo] = []
 
     class Config:
         from_attributes = True

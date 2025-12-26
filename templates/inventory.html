@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory - CRM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* Navigation */
+        .nav {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a73e8;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #5f6368;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            background: #f1f3f4;
+        }
+
+        .nav-tab.active {
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #1a73e8;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #1557b0;
+        }
+
+        .btn-secondary {
+            background: #fff;
+            color: #5f6368;
+            border: 1px solid #dadce0;
+        }
+
+        .btn-secondary:hover {
+            background: #f1f3f4;
+        }
+
+        .btn-danger {
+            background: #ea4335;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #c5221f;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        /* Math toolbar */
+        .math-toolbar {
+            display: none;
+            position: sticky;
+            top: 52px;
+            z-index: 99;
+            background: #1a73e8;
+            color: white;
+            padding: 10px 24px;
+            align-items: center;
+            gap: 12px;
+            animation: slideDown 0.2s ease;
+        }
+
+        .math-toolbar.show {
+            display: flex;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .math-input {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 180px;
+            font-family: monospace;
+        }
+
+        .math-input:focus {
+            outline: 2px solid white;
+        }
+
+        /* Selected cells */
+        .cell.math-selected {
+            background: #e8f0fe !important;
+            outline: 2px solid #1a73e8;
+            outline-offset: -2px;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 200px;
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        .selection-info {
+            font-size: 13px;
+            color: #5f6368;
+        }
+
+        /* Table container */
+        .table-container {
+            background: #fff;
+            margin: 0;
+            overflow-x: auto;
+        }
+
+        /* Spreadsheet-style table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 500;
+            color: #5f6368;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        th.sortable:hover {
+            background: #e8eaed;
+        }
+
+        th.sortable::after {
+            content: '⇅';
+            position: absolute;
+            right: 4px;
+            opacity: 0.3;
+            font-size: 10px;
+        }
+
+        th.sortable.sorted-asc::after {
+            content: '↑';
+            opacity: 1;
+        }
+
+        th.sortable.sorted-desc::after {
+            content: '↓';
+            opacity: 1;
+        }
+
+        td {
+            padding: 0;
+            border-bottom: 1px solid #e8eaed;
+            border-right: 1px solid #e8eaed;
+        }
+
+        td:last-child {
+            border-right: none;
+        }
+
+        tr:hover td {
+            background: #f8f9fa;
+        }
+
+        tr.sold td {
+            background: #e6f4ea;
+        }
+
+        tr.sold:hover td {
+            background: #ceead6;
+        }
+
+        tr.unsold td {
+            background: #fef7e0;
+        }
+
+        tr.unsold:hover td {
+            background: #feefc3;
+        }
+
+        tr.selected td {
+            background: #e8f0fe !important;
+        }
+
+        /* Editable cells */
+        .cell {
+            padding: 8px 12px;
+            min-height: 36px;
+            cursor: text;
+        }
+
+        .cell:focus {
+            outline: 2px solid #1a73e8;
+            outline-offset: -2px;
+            background: #fff !important;
+        }
+
+        .cell-checkbox {
+            width: 40px;
+            text-align: center;
+        }
+
+        .cell-checkbox input {
+            cursor: pointer;
+        }
+
+        .cell-number {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cell-date {
+            min-width: 100px;
+        }
+
+        .cell-profit {
+            font-weight: 500;
+        }
+
+        .positive {
+            color: #137333;
+        }
+
+        .negative {
+            color: #c5221f;
+        }
+
+        /* Row number */
+        .row-num {
+            color: #5f6368;
+            font-size: 12px;
+            text-align: center;
+            width: 40px;
+            background: #f8f9fa;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #5f6368;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* Summary bar */
+        .summary-bar {
+            background: #fff;
+            border-top: 1px solid #e0e0e0;
+            padding: 12px 24px;
+            display: flex;
+            gap: 32px;
+            font-size: 13px;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .summary-item {
+            display: flex;
+            gap: 8px;
+        }
+
+        .summary-label {
+            color: #5f6368;
+        }
+
+        .summary-value {
+            font-weight: 600;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #323232;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 1001;
+            display: none;
+        }
+
+        .toast.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-title">ReLoomer CRM</div>
+        <div class="nav-tabs">
+            <a href="/overview" class="nav-tab">Overview</a>
+            <a href="/inventory" class="nav-tab active">Inventory</a>
+            <a href="/expenses" class="nav-tab">Expenses</a>
+            <a href="/listings" class="nav-tab">Listings</a>
+        </div>
+    </nav>
+
+    <!-- Math operations toolbar (appears when cells selected) -->
+    <div class="math-toolbar" id="mathToolbar">
+        <span id="mathSelectedCount">0 cells selected</span>
+        <input type="text" id="mathExpression" placeholder="e.g. /5.1 or *0.2 or +10" class="math-input">
+        <button class="btn btn-primary btn-sm" onclick="applyMathOperation()">Apply</button>
+        <button class="btn btn-secondary btn-sm" onclick="clearCellSelection()">Clear</button>
+    </div>
+
+    <div class="toolbar">
+        <button class="btn btn-primary" onclick="openBulkAddModal()">+ Add Batch</button>
+        <button class="btn btn-secondary" onclick="addSingleRow()">+ Add Row</button>
+        <button class="btn btn-secondary" onclick="openImportModal()">Import from Sheets</button>
+
+        <select class="filter-select" id="statusFilter" onchange="loadInventory()">
+            <option value="">All Status</option>
+            <option value="active">Unsold</option>
+            <option value="sold">Sold</option>
+        </select>
+
+        <select class="filter-select" id="batchFilter" onchange="loadInventory()">
+            <option value="">All Batches</option>
+        </select>
+
+        <input type="text" class="search-input" placeholder="Search..." id="searchInput" oninput="filterTable()">
+
+        <div class="spacer"></div>
+
+        <span class="selection-info" id="selectionInfo"></span>
+        <button class="btn btn-danger" id="deleteBtn" style="display:none" onclick="deleteSelected()">Delete Selected</button>
+    </div>
+
+    <div class="table-container">
+        <table id="inventoryTable">
+            <thead>
+                <tr>
+                    <th class="cell-checkbox"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th class="row-num">#</th>
+                    <th class="sortable" onclick="sortTable('purchase_date')">Purchase Date</th>
+                    <th class="sortable" onclick="sortTable('received_date')">Received Date</th>
+                    <th class="sortable" onclick="sortTable('purchase_cost')">Cost</th>
+                    <th class="sortable" onclick="sortTable('batch_name')">Product/Batch</th>
+                    <th class="sortable" onclick="sortTable('sale_price')">Sale Price</th>
+                    <th class="sortable" onclick="sortTable('profit')">Profit</th>
+                    <th>VAT</th>
+                    <th class="sortable" onclick="sortTable('sale_date')">Sale Date</th>
+                    <th class="sortable" onclick="sortTable('days_to_sell')">Days</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="11" style="padding: 40px; text-align: center; color: #5f6368;">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="summary-bar">
+        <div class="summary-item">
+            <span class="summary-label">Total Items:</span>
+            <span class="summary-value" id="totalItems">0</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total Investment:</span>
+            <span class="summary-value" id="totalInvestment">€0</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total Revenue:</span>
+            <span class="summary-value" id="totalRevenue">€0</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total Profit:</span>
+            <span class="summary-value positive" id="totalProfit">€0</span>
+        </div>
+    </div>
+
+    <!-- Bulk Add Modal -->
+    <div class="modal-overlay" id="bulkAddModal">
+        <div class="modal">
+            <div class="modal-title">Add Batch</div>
+            <div class="form-group">
+                <label class="form-label">Batch/Product Name</label>
+                <input type="text" class="form-input" id="batchName" placeholder="e.g., dickies, levis scurti">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Total Cost (€)</label>
+                    <input type="number" class="form-input" id="totalCost" step="0.01" placeholder="700">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Number of Items</label>
+                    <input type="number" class="form-input" id="itemCount" placeholder="100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cost per Item: <strong id="costPerItem">€0.00</strong></label>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Purchase Date</label>
+                    <input type="date" class="form-input" id="purchaseDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Received Date</label>
+                    <input type="date" class="form-input" id="receivedDate">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('bulkAddModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitBulkAdd()">Add Items</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal">
+            <div class="modal-title">Import from Google Sheets</div>
+            <p style="color: #5f6368; margin-bottom: 16px; font-size: 14px;">
+                Paste data from your Google Sheet (with or without header).<br>
+                <strong>Auto-detects format. Supported columns:</strong><br>
+                Purchase Date, Received Date, Cost, Product, Sale Price, Profit*, VAT, Sale Date, Days*<br>
+                <span style="font-size: 12px;">* Profit and Days are skipped (calculated automatically)</span>
+            </p>
+            <div class="form-group">
+                <label class="form-label">Paste Data (Tab-separated)</label>
+                <textarea class="form-input" id="importData" rows="10" placeholder="Select rows in Google Sheets, copy (Ctrl+C), and paste here..."></textarea>
+            </div>
+            <!-- Progress indicator -->
+            <div id="importProgress" style="display: none; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+                    <span id="importProgressText">Importing...</span>
+                    <span id="importProgressCount">0 / 0</span>
+                </div>
+                <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
+                    <div id="importProgressBar" style="background: #1a73e8; height: 100%; width: 0%; transition: width 0.1s;"></div>
+                </div>
+                <div id="importProgressDetails" style="font-size: 12px; color: #5f6368; margin-top: 6px;"></div>
+            </div>
+            <!-- Skipped rows log -->
+            <div id="importErrorLog" style="display: none; margin-bottom: 16px;">
+                <div style="font-size: 13px; font-weight: 500; color: #ea4335; margin-bottom: 8px;">Skipped Rows:</div>
+                <div id="importErrorList" style="max-height: 150px; overflow-y: auto; font-size: 12px; background: #fce8e6; border-radius: 4px; padding: 8px; font-family: monospace;"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="importCancelBtn" onclick="closeModal('importModal')">Cancel</button>
+                <button class="btn btn-primary" id="importBtn" onclick="importFromSheets()">Import</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let inventoryData = [];
+        let selectedIds = new Set();
+        let sortColumn = 'purchase_date';
+        let sortDirection = 'desc';
+        let selectedCells = new Set(); // For math operations
+
+        // Format currency
+        function formatCurrency(value) {
+            if (value === null || value === undefined) return '';
+            return new Intl.NumberFormat('nl-NL', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(value);
+        }
+
+        // Format date for display
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('nl-NL');
+        }
+
+        // Format date for input
+        function formatDateInput(dateStr) {
+            if (!dateStr) return '';
+            return dateStr.split('T')[0];
+        }
+
+        // Parse date from various formats
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            dateStr = dateStr.trim();
+
+            // Handle DD.MM.YYYY format
+            if (dateStr.includes('.')) {
+                const parts = dateStr.split('.');
+                if (parts.length === 3) {
+                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+            }
+            // Handle DD,MM,YYYY format (commas)
+            if (dateStr.includes(',')) {
+                const parts = dateStr.split(',');
+                if (parts.length === 3) {
+                    return `${parts[2].trim()}-${parts[1].trim().padStart(2, '0')}-${parts[0].trim().padStart(2, '0')}`;
+                }
+            }
+            // Handle DD/MM/YYYY format
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+            }
+            return dateStr;
+        }
+
+        // Parse number (handles comma as decimal separator)
+        function parseNumber(str) {
+            if (!str || str === '') return null;
+            return parseFloat(str.toString().replace(',', '.'));
+        }
+
+        // Show toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Load inventory data
+        async function loadInventory() {
+            const status = document.getElementById('statusFilter').value;
+            const batch = document.getElementById('batchFilter').value;
+
+            let url = '/api/inventory/items?limit=1000';
+            if (status) url += `&status=${status}`;
+            if (batch) url += `&batch_name=${encodeURIComponent(batch)}`;
+
+            try {
+                const response = await fetch(url);
+                inventoryData = await response.json();
+                renderTable();
+                updateSummary();
+                loadBatchOptions();
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+                showToast('Error loading data');
+            }
+        }
+
+        // Load batch options for filter
+        async function loadBatchOptions() {
+            const batches = [...new Set(inventoryData.map(i => i.batch_name).filter(Boolean))];
+            const select = document.getElementById('batchFilter');
+            const currentValue = select.value;
+
+            select.innerHTML = '<option value="">All Batches</option>' +
+                batches.map(b => `<option value="${b}" ${b === currentValue ? 'selected' : ''}>${b}</option>`).join('');
+        }
+
+        // Render table
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            let filtered = inventoryData;
+            if (searchTerm) {
+                filtered = inventoryData.filter(item =>
+                    (item.title || '').toLowerCase().includes(searchTerm) ||
+                    (item.batch_name || '').toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Sort
+            filtered.sort((a, b) => {
+                let aVal = a[sortColumn];
+                let bVal = b[sortColumn];
+
+                if (aVal === null || aVal === undefined) aVal = '';
+                if (bVal === null || bVal === undefined) bVal = '';
+
+                if (typeof aVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+
+                if (sortDirection === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" style="padding: 40px; text-align: center; color: #5f6368;">No items found. Add items using the buttons above.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((item, idx) => {
+                const rowClass = item.sale_date ? 'sold' : 'unsold';
+                const profitClass = item.profit >= 0 ? 'positive' : 'negative';
+                const isSelected = selectedIds.has(item.id);
+
+                return `
+                    <tr class="${rowClass} ${isSelected ? 'selected' : ''}" data-id="${item.id}">
+                        <td class="cell-checkbox">
+                            <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelect(${item.id})">
+                        </td>
+                        <td class="row-num">${idx + 1}</td>
+                        <td><div class="cell cell-date" contenteditable="true" data-field="purchase_date" data-id="${item.id}" onblur="saveCell(this)" onmousedown="toggleCellSelection(this, event)">${formatDate(item.purchase_date)}</div></td>
+                        <td><div class="cell cell-date" contenteditable="true" data-field="received_date" data-id="${item.id}" onblur="saveCell(this)" onmousedown="toggleCellSelection(this, event)">${formatDate(item.received_date)}</div></td>
+                        <td><div class="cell cell-number" contenteditable="true" data-field="purchase_cost" data-id="${item.id}" onblur="saveCell(this)" onmousedown="toggleCellSelection(this, event)">${item.purchase_cost?.toFixed(2) || ''}</div></td>
+                        <td><div class="cell" contenteditable="true" data-field="batch_name" data-id="${item.id}" onblur="saveCell(this)">${item.batch_name || ''}</div></td>
+                        <td><div class="cell cell-number" contenteditable="true" data-field="sale_price" data-id="${item.id}" onblur="saveCell(this)" onmousedown="toggleCellSelection(this, event)">${item.sale_price?.toFixed(2) || ''}</div></td>
+                        <td><div class="cell cell-number cell-profit ${profitClass}">${item.profit?.toFixed(2) || ''}</div></td>
+                        <td><div class="cell cell-number" contenteditable="true" data-field="vat_amount" data-id="${item.id}" onblur="saveCell(this)" onmousedown="toggleCellSelection(this, event)">${item.vat_amount?.toFixed(2) || ''}</div></td>
+                        <td><div class="cell cell-date" contenteditable="true" data-field="sale_date" data-id="${item.id}" onblur="saveCell(this)" onmousedown="toggleCellSelection(this, event)">${formatDate(item.sale_date)}</div></td>
+                        <td><div class="cell cell-number">${item.days_to_sell || ''}</div></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Save cell on blur
+        async function saveCell(cell) {
+            const id = cell.dataset.id;
+            const field = cell.dataset.field;
+            let value = cell.textContent.trim();
+
+            // Parse value based on field type
+            if (field.includes('date')) {
+                value = parseDate(value) || null;
+            } else if (field.includes('cost') || field.includes('price') || field.includes('vat')) {
+                value = parseNumber(value);
+            }
+
+            try {
+                const response = await fetch(`/api/inventory/items/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [field]: value })
+                });
+
+                if (response.ok) {
+                    const updated = await response.json();
+                    // Update local data
+                    const idx = inventoryData.findIndex(i => i.id == id);
+                    if (idx !== -1) {
+                        inventoryData[idx] = updated;
+                    }
+                    renderTable();
+                    updateSummary();
+                } else {
+                    showToast('Error saving');
+                }
+            } catch (error) {
+                console.error('Error saving:', error);
+                showToast('Error saving');
+            }
+        }
+
+        // Update summary
+        function updateSummary() {
+            const totalItems = inventoryData.length;
+            const totalInvestment = inventoryData.reduce((sum, i) => sum + (i.purchase_cost || 0), 0);
+            const soldItems = inventoryData.filter(i => i.sale_date);
+            const totalRevenue = soldItems.reduce((sum, i) => sum + (i.sale_price || 0), 0);
+            const totalProfit = soldItems.reduce((sum, i) => sum + (i.profit || 0), 0);
+
+            document.getElementById('totalItems').textContent = totalItems;
+            document.getElementById('totalInvestment').textContent = formatCurrency(totalInvestment);
+            document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
+            document.getElementById('totalProfit').className = 'summary-value ' + (totalProfit >= 0 ? 'positive' : 'negative');
+        }
+
+        // Sort table
+        function sortTable(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'desc';
+            }
+
+            // Update header classes
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+            const currentHeader = document.querySelector(`th[onclick="sortTable('${column}')"]`);
+            if (currentHeader) {
+                currentHeader.classList.add(sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            }
+
+            renderTable();
+        }
+
+        // Filter table
+        function filterTable() {
+            renderTable();
+        }
+
+        // Selection
+        function toggleSelect(id) {
+            if (selectedIds.has(id)) {
+                selectedIds.delete(id);
+            } else {
+                selectedIds.add(id);
+            }
+            updateSelectionUI();
+            renderTable();
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            if (checked) {
+                inventoryData.forEach(i => selectedIds.add(i.id));
+            } else {
+                selectedIds.clear();
+            }
+            updateSelectionUI();
+            renderTable();
+        }
+
+        function updateSelectionUI() {
+            const count = selectedIds.size;
+            document.getElementById('selectionInfo').textContent = count > 0 ? `${count} selected` : '';
+            document.getElementById('deleteBtn').style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+
+        // Delete selected
+        async function deleteSelected() {
+            if (!confirm(`Delete ${selectedIds.size} items?`)) return;
+
+            try {
+                const response = await fetch('/api/inventory/items', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(Array.from(selectedIds))
+                });
+
+                if (response.ok) {
+                    selectedIds.clear();
+                    updateSelectionUI();
+                    showToast('Items deleted');
+                    loadInventory();
+                }
+            } catch (error) {
+                console.error('Error deleting:', error);
+                showToast('Error deleting items');
+            }
+        }
+
+        // Add single row
+        async function addSingleRow() {
+            try {
+                const response = await fetch('/api/inventory/items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: 'New Item',
+                        purchase_cost: 0,
+                        purchase_date: new Date().toISOString().split('T')[0]
+                    })
+                });
+
+                if (response.ok) {
+                    showToast('Row added');
+                    loadInventory();
+                }
+            } catch (error) {
+                console.error('Error adding row:', error);
+            }
+        }
+
+        // Modal functions
+        function openBulkAddModal() {
+            document.getElementById('bulkAddModal').classList.add('active');
+            document.getElementById('purchaseDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // Calculate cost per item in bulk add modal
+        document.getElementById('totalCost')?.addEventListener('input', updateCostPerItem);
+        document.getElementById('itemCount')?.addEventListener('input', updateCostPerItem);
+
+        function updateCostPerItem() {
+            const total = parseFloat(document.getElementById('totalCost').value) || 0;
+            const count = parseInt(document.getElementById('itemCount').value) || 1;
+            const perItem = total / count;
+            document.getElementById('costPerItem').textContent = formatCurrency(perItem);
+        }
+
+        // Submit bulk add
+        async function submitBulkAdd() {
+            const data = {
+                batch_name: document.getElementById('batchName').value,
+                total_cost: parseFloat(document.getElementById('totalCost').value),
+                item_count: parseInt(document.getElementById('itemCount').value),
+                purchase_date: document.getElementById('purchaseDate').value || null,
+                received_date: document.getElementById('receivedDate').value || null
+            };
+
+            if (!data.batch_name || !data.total_cost || !data.item_count) {
+                showToast('Please fill all required fields');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/inventory/bulk-add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeModal('bulkAddModal');
+                    showToast(`Added ${data.item_count} items`);
+                    loadInventory();
+                    // Reset form
+                    document.getElementById('batchName').value = '';
+                    document.getElementById('totalCost').value = '';
+                    document.getElementById('itemCount').value = '';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error adding batch');
+            }
+        }
+
+        // Import from sheets
+        async function importFromSheets() {
+            const data = document.getElementById('importData').value;
+            if (!data.trim()) {
+                showToast('Please paste data');
+                return;
+            }
+
+            const lines = data.trim().split('\n');
+            let imported = 0;
+            let errors = 0;
+            let errorDetails = [];
+
+            // Show progress UI
+            const progressDiv = document.getElementById('importProgress');
+            const progressBar = document.getElementById('importProgressBar');
+            const progressCount = document.getElementById('importProgressCount');
+            const progressText = document.getElementById('importProgressText');
+            const progressDetails = document.getElementById('importProgressDetails');
+            const importBtn = document.getElementById('importBtn');
+            const importData = document.getElementById('importData');
+
+            progressDiv.style.display = 'block';
+            importBtn.disabled = true;
+            importBtn.textContent = 'Importing...';
+            importData.disabled = true;
+
+            // Detect format from header or first data row
+            let formatB = false;
+            const firstLine = lines[0].toLowerCase();
+            if (firstLine.includes('durata') || firstLine.includes('article')) {
+                formatB = true;
+            }
+
+            // Count actual data rows (excluding header)
+            let startIndex = 0;
+            if (lines[0].toLowerCase().includes('cand') || lines[0].toLowerCase().includes('date') ||
+                lines[0].toLowerCase().includes('produs') || lines[0].toLowerCase().includes('article') ||
+                lines[0].toLowerCase().includes('investitie')) {
+                startIndex = 1;
+            }
+            const totalRows = lines.length - startIndex;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // Skip header row if present
+                if (i === 0 && (line.toLowerCase().includes('cand') || line.toLowerCase().includes('date') ||
+                    line.toLowerCase().includes('produs') || line.toLowerCase().includes('article') ||
+                    line.toLowerCase().includes('investitie'))) {
+                    continue;
+                }
+
+                const currentRow = i - startIndex + 1;
+                const percent = Math.round((currentRow / totalRows) * 100);
+                progressBar.style.width = percent + '%';
+                progressCount.textContent = `${currentRow} / ${totalRows}`;
+                progressDetails.textContent = `Importing: ${line.split('\t')[3]?.substring(0, 30) || 'Item'}...`;
+
+                const cols = line.split('\t');
+                if (cols.length < 4) {
+                    errors++;
+                    const preview = cols.slice(0, 4).join(' | ') || '(empty row)';
+                    errorDetails.push({
+                        row: i + 1,
+                        reason: 'Not enough columns (need at least 4)',
+                        data: preview
+                    });
+                    continue;
+                }
+
+                let purchaseDate, receivedDate, purchaseCost, productName, salePrice, vatAmount, saleDate;
+
+                // Detect format: check where the cost column is
+                // Format A (9 cols): purchase_date, received_date (may be empty), cost, name, sale_price, profit, VAT, sale_date, days
+                // Format B (8 cols): purchase_date, cost, name, sale_price, profit, VAT, sale_date, days
+                const col1 = cols[1]?.trim() || '';
+                const col2 = cols[2]?.trim() || '';
+
+                // Check if col1 looks like a number (cost) - indicates Format B
+                const col1IsNumber = col1 && (col1.includes(',') || /^\d+(\.\d+)?$/.test(col1));
+                // Check if col2 looks like a number (cost) - indicates Format A
+                const col2IsNumber = col2 && (col2.includes(',') || /^\d+(\.\d+)?$/.test(col2));
+
+                // If col1 is empty or a date, and col2 is a number -> Format A
+                // If col1 is a number -> Format B
+                const isFormatA = !col1IsNumber && col2IsNumber;
+
+                if (isFormatA) {
+                    // Format A: purchase_date, received_date (may be empty), cost, name, sale_price, profit, VAT, sale_date, days
+                    purchaseDate = parseDate(cols[0]);
+                    receivedDate = parseDate(cols[1]) || parseDate(cols[0]); // Use purchase_date if received is empty
+                    purchaseCost = parseNumber(cols[2]);
+                    productName = cols[3]?.trim();
+                    salePrice = parseNumber(cols[4]);
+                    // cols[5] is profit - skip
+                    vatAmount = parseNumber(cols[6]);
+                    saleDate = parseDate(cols[7]);
+                    // cols[8] is days - skip
+                } else {
+                    // Format B: purchase_date, cost, name, sale_price, profit, VAT, sale_date, days (NO received_date column)
+                    purchaseDate = parseDate(cols[0]);
+                    receivedDate = parseDate(cols[0]); // Same as purchase date
+                    purchaseCost = parseNumber(cols[1]);
+                    productName = cols[2]?.trim();
+                    salePrice = parseNumber(cols[3]);
+                    // cols[4] is profit - skip
+                    vatAmount = parseNumber(cols[5]);
+                    saleDate = parseDate(cols[6]);
+                    // cols[7] is days - skip
+                }
+
+                if (!productName || purchaseCost === null) {
+                    errors++;
+                    const costCol = isFormatA ? cols[2] : cols[1];
+                    const nameCol = isFormatA ? cols[3] : cols[2];
+                    errorDetails.push({
+                        row: i + 1,
+                        reason: !productName ? 'Missing product name' : 'Missing or invalid purchase cost',
+                        data: `${nameCol || '(no name)'} | Cost: ${costCol || '(empty)'} | Format: ${isFormatA ? 'A' : 'B'}`
+                    });
+                    continue;
+                }
+
+                const item = {
+                    title: productName,
+                    purchase_date: purchaseDate,
+                    received_date: receivedDate,
+                    purchase_cost: purchaseCost,
+                    batch_name: productName,
+                    sale_price: salePrice,
+                    vat_amount: vatAmount,
+                    sale_date: saleDate
+                };
+
+                try {
+                    const response = await fetch('/api/inventory/items', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(item)
+                    });
+
+                    if (response.ok) {
+                        imported++;
+                    } else {
+                        const err = await response.json();
+                        errors++;
+                        errorDetails.push({
+                            row: i + 1,
+                            reason: err.detail || 'API error',
+                            data: `${productName} | ${purchaseCost}`
+                        });
+                    }
+                } catch (e) {
+                    errors++;
+                    errorDetails.push({
+                        row: i + 1,
+                        reason: e.message,
+                        data: `${productName} | ${purchaseCost}`
+                    });
+                }
+
+                // Update progress text
+                progressText.textContent = `Imported ${imported}${errors > 0 ? `, ${errors} errors` : ''}`;
+            }
+
+            // Complete
+            progressBar.style.width = '100%';
+            progressBar.style.background = errors > 0 ? '#fbbc04' : '#34a853';
+            progressText.textContent = `Done! ${imported} imported${errors > 0 ? `, ${errors} skipped` : ''}`;
+            progressDetails.textContent = '';
+
+            // Show error log if there are errors
+            const errorLogDiv = document.getElementById('importErrorLog');
+            const errorListDiv = document.getElementById('importErrorList');
+
+            if (errors > 0 && errorDetails.length > 0) {
+                errorLogDiv.style.display = 'block';
+                errorListDiv.innerHTML = errorDetails.map(err =>
+                    `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #f5c6cb;">
+                        <strong>Row ${err.row}:</strong> ${err.reason}<br>
+                        <span style="color: #666;">Data: ${err.data}</span>
+                    </div>`
+                ).join('');
+
+                // Keep modal open longer when there are errors
+                importBtn.textContent = 'Close';
+                importBtn.disabled = false;
+                importBtn.onclick = () => {
+                    closeModal('importModal');
+                    resetImportUI();
+                    loadInventory();
+                };
+            } else {
+                // Auto-close on success
+                setTimeout(() => {
+                    closeModal('importModal');
+                    resetImportUI();
+                    showToast(`Imported ${imported} items`);
+                    loadInventory();
+                }, 1000);
+            }
+        }
+
+        function resetImportUI() {
+            const progressDiv = document.getElementById('importProgress');
+            const progressBar = document.getElementById('importProgressBar');
+            const importBtn = document.getElementById('importBtn');
+            const importData = document.getElementById('importData');
+            const errorLogDiv = document.getElementById('importErrorLog');
+
+            progressDiv.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressBar.style.background = '#1a73e8';
+            importBtn.disabled = false;
+            importBtn.textContent = 'Import';
+            importBtn.onclick = importFromSheets;
+            importData.disabled = false;
+            importData.value = '';
+            errorLogDiv.style.display = 'none';
+        }
+
+        // ===== MATH OPERATIONS FOR CELLS =====
+
+        function toggleCellSelection(cell, event) {
+            // Only for number or date cells
+            if (!cell.classList.contains('cell-number') && !cell.classList.contains('cell-date')) return;
+
+            if (event.ctrlKey || event.metaKey) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                // Blur the cell to prevent editing mode
+                cell.blur();
+                window.getSelection().removeAllRanges();
+
+                const cellKey = `${cell.dataset.id}-${cell.dataset.field}`;
+
+                if (selectedCells.has(cellKey)) {
+                    selectedCells.delete(cellKey);
+                    cell.classList.remove('math-selected');
+                } else {
+                    selectedCells.add(cellKey);
+                    cell.classList.add('math-selected');
+                }
+
+                updateMathToolbar();
+                return false;
+            }
+        }
+
+        function updateMathToolbar() {
+            const toolbar = document.getElementById('mathToolbar');
+            const countSpan = document.getElementById('mathSelectedCount');
+
+            if (selectedCells.size > 0) {
+                toolbar.classList.add('show');
+                countSpan.textContent = `${selectedCells.size} cell${selectedCells.size > 1 ? 's' : ''} selected`;
+            } else {
+                toolbar.classList.remove('show');
+            }
+        }
+
+        function clearCellSelection() {
+            document.querySelectorAll('.cell.math-selected').forEach(cell => {
+                cell.classList.remove('math-selected');
+            });
+            selectedCells.clear();
+            updateMathToolbar();
+        }
+
+        async function applyMathOperation() {
+            const expression = document.getElementById('mathExpression').value.trim();
+            if (!expression) {
+                showToast('Enter an expression like /5.1 or *0.2');
+                return;
+            }
+
+            // Parse expression: operator + number
+            const match = expression.match(/^([+\-*\/])(.+)$/);
+            if (!match) {
+                showToast('Invalid format. Use: /5.1, *0.2, +10, -5');
+                return;
+            }
+
+            const operator = match[1];
+            const operand = parseFloat(match[2].replace(',', '.'));
+
+            if (isNaN(operand)) {
+                showToast('Invalid number');
+                return;
+            }
+
+            if (operator === '/' && operand === 0) {
+                showToast('Cannot divide by zero');
+                return;
+            }
+
+            let updated = 0;
+            let errors = 0;
+
+            for (const cellKey of selectedCells) {
+                const [id, field] = cellKey.split('-');
+                const cell = document.querySelector(`.cell[data-id="${id}"][data-field="${field}"]`);
+
+                if (!cell) continue;
+
+                const currentValue = parseFloat(cell.textContent.replace(',', '.')) || 0;
+                let newValue;
+
+                switch (operator) {
+                    case '+': newValue = currentValue + operand; break;
+                    case '-': newValue = currentValue - operand; break;
+                    case '*': newValue = currentValue * operand; break;
+                    case '/': newValue = currentValue / operand; break;
+                }
+
+                // Round to 2 decimal places
+                newValue = Math.round(newValue * 100) / 100;
+
+                try {
+                    const response = await fetch(`/api/inventory/items/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ [field]: newValue })
+                    });
+
+                    if (response.ok) {
+                        cell.textContent = newValue.toFixed(2);
+                        updated++;
+                    } else {
+                        errors++;
+                    }
+                } catch (e) {
+                    errors++;
+                }
+            }
+
+            showToast(`Updated ${updated} cells${errors > 0 ? `, ${errors} errors` : ''}`);
+            clearCellSelection();
+            document.getElementById('mathExpression').value = '';
+
+            // Reload to update computed values like profit
+            loadInventory();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInventory();
+
+            // Handle Enter key on math expression input
+            document.getElementById('mathExpression').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyMathOperation();
+                } else if (e.key === 'Escape') {
+                    clearCellSelection();
+                }
+            });
+
+            // Handle Escape to clear cell selection
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && selectedCells.size > 0) {
+                    clearCellSelection();
+                }
+            });
+
+            // Handle paste for selected cells
+            document.addEventListener('paste', async (e) => {
+                if (selectedCells.size === 0) return;
+
+                // Don't intercept if focused on an input/textarea/contenteditable
+                const activeEl = document.activeElement;
+                if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' ||
+                    (activeEl.isContentEditable && !activeEl.classList.contains('math-selected'))) {
+                    return;
+                }
+
+                e.preventDefault();
+
+                const clipboardData = e.clipboardData.getData('text');
+
+                // Handle both newline-separated (column copy) and tab-separated (row copy)
+                // First split by newlines, then by tabs if needed
+                let values = [];
+                const lines = clipboardData.split(/[\n\r]+/);
+                for (const line of lines) {
+                    if (line.includes('\t')) {
+                        // Row copy - split by tabs
+                        values.push(...line.split('\t').map(v => v.trim()).filter(v => v));
+                    } else if (line.trim()) {
+                        values.push(line.trim());
+                    }
+                }
+
+                if (values.length === 0) {
+                    showToast('No values to paste');
+                    return;
+                }
+
+                // Convert selectedCells Set to Array to maintain order
+                const cellsArray = Array.from(selectedCells);
+
+                if (values.length !== cellsArray.length) {
+                    showToast(`${values.length} values, ${cellsArray.length} cells selected. Pasting what matches.`);
+                }
+
+                let updated = 0;
+                let errors = 0;
+
+                for (let i = 0; i < Math.min(values.length, cellsArray.length); i++) {
+                    const cellKey = cellsArray[i];
+                    const [id, field] = cellKey.split('-');
+                    const cell = document.querySelector(`.cell[data-id="${id}"][data-field="${field}"]`);
+
+                    if (!cell) continue;
+
+                    let value = values[i];
+
+                    // Parse value based on field type
+                    if (cell.classList.contains('cell-number')) {
+                        value = parseFloat(value.replace(',', '.'));
+                        if (isNaN(value)) {
+                            errors++;
+                            continue;
+                        }
+                    } else if (cell.classList.contains('cell-date')) {
+                        // Keep as string, backend will parse
+                        value = value;
+                    }
+
+                    try {
+                        const response = await fetch(`/api/inventory/items/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ [field]: value })
+                        });
+
+                        if (response.ok) {
+                            // Update cell display
+                            if (cell.classList.contains('cell-number')) {
+                                cell.textContent = value.toFixed(2);
+                            } else {
+                                cell.textContent = value;
+                            }
+                            updated++;
+                        } else {
+                            errors++;
+                        }
+                    } catch (e) {
+                        errors++;
+                    }
+                }
+
+                showToast(`Pasted ${updated} values${errors > 0 ? `, ${errors} errors` : ''}`);
+                clearCellSelection();
+                loadInventory();
+            });
+
+            // Handle Enter key on editable cells - save and move to next row
+            document.getElementById('tableBody').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.target.classList.contains('cell')) {
+                    e.preventDefault();
+                    e.target.blur(); // This triggers saveCell via onblur
+
+                    // Optionally move to next row same column
+                    const currentRow = e.target.closest('tr');
+                    const nextRow = currentRow.nextElementSibling;
+                    if (nextRow) {
+                        const cellIndex = Array.from(currentRow.querySelectorAll('.cell')).indexOf(e.target);
+                        const nextCell = nextRow.querySelectorAll('.cell')[cellIndex];
+                        if (nextCell) {
+                            nextCell.focus();
+                        }
+                    }
+                }
+                // Tab key - move to next cell
+                if (e.key === 'Tab' && e.target.classList.contains('cell')) {
+                    e.preventDefault();
+                    e.target.blur();
+
+                    const cells = Array.from(document.querySelectorAll('.cell[contenteditable="true"]'));
+                    const currentIndex = cells.indexOf(e.target);
+                    const nextIndex = e.shiftKey ? currentIndex - 1 : currentIndex + 1;
+                    if (cells[nextIndex]) {
+                        cells[nextIndex].focus();
+                    }
+                }
+                // Escape - cancel editing
+                if (e.key === 'Escape' && e.target.classList.contains('cell')) {
+                    e.target.blur();
+                    loadInventory(); // Reload to discard changes
+                }
+            });
+        });
+
+        // Close modal on outside click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

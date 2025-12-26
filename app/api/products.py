@@ -161,8 +161,8 @@ async def sync_product_to_platform(
 async def mark_product_sold(
     product_id: int,
     platform: Platform,
-    sale_price: Optional[float] = None,
     background_tasks: BackgroundTasks,
+    sale_price: Optional[float] = None,
     db: Session = Depends(get_db)
 ):
     """Mark a product as sold on a specific platform"""

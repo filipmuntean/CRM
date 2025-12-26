@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Overview - CRM</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* Navigation */
+        .nav {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a73e8;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #5f6368;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            background: #f1f3f4;
+        }
+
+        .nav-tab.active {
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Stats cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .stat-card.highlight .stat-label {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .stat-card.highlight .stat-value {
+            color: #fff;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #5f6368;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #202124;
+        }
+
+        .stat-value.positive {
+            color: #34a853;
+        }
+
+        .stat-value.negative {
+            color: #ea4335;
+        }
+
+        .stat-value.small {
+            font-size: 22px;
+        }
+
+        .stat-subvalue {
+            font-size: 12px;
+            color: #5f6368;
+            margin-top: 4px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #5f6368;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            margin-top: 8px;
+        }
+
+        /* Charts section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: #202124;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Monthly table */
+        .table-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .year-select {
+            padding: 6px 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 500;
+            font-size: 12px;
+            color: #5f6368;
+            text-transform: uppercase;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .positive {
+            color: #34a853;
+        }
+
+        .negative {
+            color: #ea4335;
+        }
+
+        /* Batches section */
+        .batches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .batch-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .batch-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .batch-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .batch-stat {
+            font-size: 13px;
+        }
+
+        .batch-stat-label {
+            color: #5f6368;
+        }
+
+        .batch-stat-value {
+            font-weight: 500;
+        }
+
+        .roi-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .roi-badge.high {
+            background: #e6f4ea;
+            color: #137333;
+        }
+
+        .roi-badge.medium {
+            background: #fef7e0;
+            color: #b06000;
+        }
+
+        .roi-badge.low {
+            background: #fce8e6;
+            color: #c5221f;
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #5f6368;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-title">ReLoomer CRM</div>
+        <div class="nav-tabs">
+            <a href="/overview" class="nav-tab active">Overview</a>
+            <a href="/inventory" class="nav-tab">Inventory</a>
+            <a href="/expenses" class="nav-tab">Expenses</a>
+            <a href="/listings" class="nav-tab">Listings</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Key Metrics -->
+        <div class="section-title">Key Metrics</div>
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card highlight">
+                <div class="stat-label">ROI</div>
+                <div class="stat-value" id="roi">-</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-label">Net Profit</div>
+                <div class="stat-value" id="netProfit">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Profit Margin</div>
+                <div class="stat-value" id="profitMargin">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sell-Through Rate</div>
+                <div class="stat-value" id="sellThroughRate">-</div>
+            </div>
+        </div>
+
+        <!-- This Month -->
+        <div class="section-title">This Month</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Revenue</div>
+                <div class="stat-value small" id="thisMonthRevenue">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Profit</div>
+                <div class="stat-value small" id="thisMonthProfit">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Items Sold</div>
+                <div class="stat-value small" id="thisMonthItemsSold">-</div>
+            </div>
+        </div>
+
+        <!-- Financial Overview -->
+        <div class="section-title">Financial Overview</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value small" id="totalRevenue">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Profit</div>
+                <div class="stat-value small positive" id="totalProfit">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Investment</div>
+                <div class="stat-value small" id="totalInvestment">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Expenses</div>
+                <div class="stat-value small negative" id="totalExpenses">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Unsold Stock Value</div>
+                <div class="stat-value small" id="unsoldStockValue">-</div>
+            </div>
+        </div>
+
+        <!-- Inventory & Performance -->
+        <div class="section-title">Inventory & Performance</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Items Sold</div>
+                <div class="stat-value small" id="itemsSold">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Items Unsold</div>
+                <div class="stat-value small" id="itemsUnsold">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Sale Price</div>
+                <div class="stat-value small" id="avgSalePrice">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Purchase Cost</div>
+                <div class="stat-value small" id="avgPurchaseCost">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Profit/Item</div>
+                <div class="stat-value small" id="avgProfit">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Days to Sell</div>
+                <div class="stat-value small" id="avgDays">-</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">Monthly Revenue & Profit</div>
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Cashflow</div>
+                <div class="chart-container">
+                    <canvas id="cashflowChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Table -->
+        <div class="table-card">
+            <div class="table-header">
+                <div class="table-title">Monthly Breakdown</div>
+                <select class="year-select" id="yearSelect" onchange="loadMonthlyData()">
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                </select>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th class="text-right">Revenue</th>
+                        <th class="text-right">Profit</th>
+                        <th class="text-right">Cashflow</th>
+                        <th class="text-right">Items Sold</th>
+                        <th class="text-right">Expenses</th>
+                    </tr>
+                </thead>
+                <tbody id="monthlyTable">
+                    <tr><td colspan="6" class="loading">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Batch Performance -->
+        <h3 style="margin-top: 32px; margin-bottom: 16px; font-size: 16px; font-weight: 500;">Batch Performance</h3>
+        <div class="batches-grid" id="batchesGrid">
+            <div class="loading">Loading batches...</div>
+        </div>
+    </div>
+
+    <script>
+        let monthlyChart = null;
+        let cashflowChart = null;
+
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('nl-NL', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(value);
+        }
+
+        // Load dashboard stats
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/inventory/stats/dashboard');
+                const data = await response.json();
+
+                // Key metrics
+                document.getElementById('roi').textContent = data.roi.toFixed(1) + '%';
+                document.getElementById('netProfit').textContent = formatCurrency(data.net_profit);
+                document.getElementById('profitMargin').textContent = data.profit_margin.toFixed(1) + '%';
+                document.getElementById('sellThroughRate').textContent = data.sell_through_rate.toFixed(1) + '%';
+
+                // This month
+                document.getElementById('thisMonthRevenue').textContent = formatCurrency(data.this_month_revenue);
+                document.getElementById('thisMonthProfit').textContent = formatCurrency(data.this_month_profit);
+                document.getElementById('thisMonthProfit').className = 'stat-value small ' + (data.this_month_profit >= 0 ? 'positive' : 'negative');
+                document.getElementById('thisMonthItemsSold').textContent = data.this_month_items_sold;
+
+                // Financial overview
+                document.getElementById('totalRevenue').textContent = formatCurrency(data.total_revenue);
+                document.getElementById('totalProfit').textContent = formatCurrency(data.total_profit);
+                document.getElementById('totalProfit').className = 'stat-value small ' + (data.total_profit >= 0 ? 'positive' : 'negative');
+                document.getElementById('totalInvestment').textContent = formatCurrency(data.total_investment);
+                document.getElementById('totalExpenses').textContent = formatCurrency(data.total_expenses);
+                document.getElementById('unsoldStockValue').textContent = formatCurrency(data.unsold_stock_value);
+
+                // Inventory & performance
+                document.getElementById('itemsSold').textContent = data.total_items_sold;
+                document.getElementById('itemsUnsold').textContent = data.total_items_unsold;
+                document.getElementById('avgSalePrice').textContent = formatCurrency(data.avg_sale_price);
+                document.getElementById('avgPurchaseCost').textContent = formatCurrency(data.avg_purchase_cost);
+                document.getElementById('avgProfit').textContent = formatCurrency(data.avg_profit_per_item);
+                document.getElementById('avgDays').textContent = Math.round(data.avg_days_to_sell) + ' days';
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+            }
+        }
+
+        // Load monthly data
+        async function loadMonthlyData() {
+            const year = document.getElementById('yearSelect').value;
+
+            try {
+                const response = await fetch(`/api/inventory/stats/monthly?year=${year}`);
+                const data = await response.json();
+
+                // Update table
+                const tbody = document.getElementById('monthlyTable');
+                tbody.innerHTML = data.map(row => `
+                    <tr>
+                        <td>${row.month} ${row.year}</td>
+                        <td class="text-right">${formatCurrency(row.revenue)}</td>
+                        <td class="text-right ${row.profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.profit)}</td>
+                        <td class="text-right ${row.cashflow >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.cashflow)}</td>
+                        <td class="text-right">${row.items_sold}</td>
+                        <td class="text-right ${row.expenses > 0 ? 'negative' : ''}">${formatCurrency(row.expenses)}</td>
+                    </tr>
+                `).join('');
+
+                // Add totals row
+                const totals = data.reduce((acc, row) => ({
+                    revenue: acc.revenue + row.revenue,
+                    profit: acc.profit + row.profit,
+                    cashflow: acc.cashflow + row.cashflow,
+                    items_sold: acc.items_sold + row.items_sold,
+                    expenses: acc.expenses + row.expenses
+                }), { revenue: 0, profit: 0, cashflow: 0, items_sold: 0, expenses: 0 });
+
+                tbody.innerHTML += `
+                    <tr style="font-weight: 600; background: #f8f9fa;">
+                        <td>Total</td>
+                        <td class="text-right">${formatCurrency(totals.revenue)}</td>
+                        <td class="text-right ${totals.profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.profit)}</td>
+                        <td class="text-right ${totals.cashflow >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.cashflow)}</td>
+                        <td class="text-right">${totals.items_sold}</td>
+                        <td class="text-right negative">${formatCurrency(totals.expenses)}</td>
+                    </tr>
+                `;
+
+                // Update charts
+                updateCharts(data);
+            } catch (error) {
+                console.error('Error loading monthly data:', error);
+            }
+        }
+
+        // Update charts
+        function updateCharts(data) {
+            const labels = data.map(d => d.month);
+            const revenue = data.map(d => d.revenue);
+            const profit = data.map(d => d.profit);
+            const cashflow = data.map(d => d.cashflow);
+
+            // Monthly chart
+            if (monthlyChart) monthlyChart.destroy();
+            monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: revenue,
+                            backgroundColor: '#1a73e8',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Profit',
+                            data: profit,
+                            backgroundColor: '#34a853',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Cashflow chart
+            if (cashflowChart) cashflowChart.destroy();
+            cashflowChart = new Chart(document.getElementById('cashflowChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Cashflow',
+                        data: cashflow,
+                        borderColor: '#1a73e8',
+                        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load batches
+        async function loadBatches() {
+            try {
+                const response = await fetch('/api/inventory/batches');
+                const batches = await response.json();
+
+                const grid = document.getElementById('batchesGrid');
+
+                if (batches.length === 0) {
+                    grid.innerHTML = '<div class="loading">No batches yet. Add items via the Inventory page.</div>';
+                    return;
+                }
+
+                grid.innerHTML = batches.map(batch => {
+                    const roiClass = batch.roi > 100 ? 'high' : batch.roi > 50 ? 'medium' : 'low';
+                    return `
+                        <div class="batch-card">
+                            <div class="batch-name">
+                                ${batch.name}
+                                <span class="roi-badge ${roiClass}">${batch.roi.toFixed(1)}% ROI</span>
+                            </div>
+                            <div class="batch-stats">
+                                <div class="batch-stat">
+                                    <div class="batch-stat-label">Investment</div>
+                                    <div class="batch-stat-value">${formatCurrency(batch.total_cost)}</div>
+                                </div>
+                                <div class="batch-stat">
+                                    <div class="batch-stat-label">Items</div>
+                                    <div class="batch-stat-value">${batch.items_sold}/${batch.item_count} sold</div>
+                                </div>
+                                <div class="batch-stat">
+                                    <div class="batch-stat-label">Revenue</div>
+                                    <div class="batch-stat-value">${formatCurrency(batch.total_revenue)}</div>
+                                </div>
+                                <div class="batch-stat">
+                                    <div class="batch-stat-label">Profit</div>
+                                    <div class="batch-stat-value ${batch.total_profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(batch.total_profit)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading batches:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardStats();
+            loadMonthlyData();
+            loadBatches();
+        });
+    </script>
+</body>
+</html>
