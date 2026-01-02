@@ -5,7 +5,7 @@ from typing import List, Optional
 from datetime import date, datetime
 from pydantic import BaseModel
 from app.core.database import get_db
-from app.models.product import Product, ProductStatus, Batch, Expense, RecurringExpense
+from app.models.product import Product, ProductStatus, Batch, Expense, RecurringExpense, ExpenseFrequency
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -43,7 +43,9 @@ class InventoryItemResponse(BaseModel):
     purchase_date: Optional[date]
     received_date: Optional[date]
     purchase_cost: Optional[float]
-    batch_name: Optional[str]
+    batch_name: Optional[str]  # Product name/description
+    batch_id: Optional[int]  # Batch group ID
+    batch_group: Optional[str]  # Batch group name (from Batch model)
     sale_price: Optional[float]
     sale_date: Optional[date]
     vat_amount: Optional[float]
@@ -108,7 +110,8 @@ class MonthlyStats(BaseModel):
     month: str
     year: int
     revenue: float
-    profit: float
+    profit: float  # Gross profit (sale_price - purchase_cost)
+    net_profit: float  # Net profit (gross profit - expenses)
     cashflow: float
     items_sold: int
     expenses: float
@@ -137,16 +140,25 @@ class DashboardStats(BaseModel):
     this_month_items_sold: int
 
 
+# Paginated response model
+class PaginatedInventoryResponse(BaseModel):
+    items: List[InventoryItemResponse]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
+
+
 # Inventory endpoints
-@router.get("/items", response_model=List[InventoryItemResponse])
+@router.get("/items", response_model=PaginatedInventoryResponse)
 def get_inventory_items(
     status: Optional[str] = None,
     batch_name: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 500,
+    page: int = 1,
+    per_page: int = 100,
     db: Session = Depends(get_db)
 ):
-    """Get all inventory items with optional filtering"""
+    """Get all inventory items with optional filtering and pagination"""
     query = db.query(Product)
 
     if status:
@@ -154,26 +166,40 @@ def get_inventory_items(
     if batch_name:
         query = query.filter(Product.batch_name == batch_name)
 
-    items = query.order_by(Product.purchase_date.desc()).offset(skip).limit(limit).all()
+    # Get total count
+    total = query.count()
+    total_pages = (total + per_page - 1) // per_page  # Ceiling division
 
-    return [
-        InventoryItemResponse(
-            id=item.id,
-            title=item.title,
-            purchase_date=item.purchase_date,
-            received_date=item.received_date,
-            purchase_cost=item.purchase_cost,
-            batch_name=item.batch_name,
-            sale_price=item.sale_price,
-            sale_date=item.sale_date,
-            vat_amount=item.vat_amount,
-            profit=item.profit,
-            days_to_sell=item.days_to_sell,
-            status=item.status.value,
-            payment_installments=item.payment_installments or 1
-        )
-        for item in items
-    ]
+    # Get paginated items
+    skip = (page - 1) * per_page
+    items = query.order_by(Product.purchase_date.desc()).offset(skip).limit(per_page).all()
+
+    return PaginatedInventoryResponse(
+        items=[
+            InventoryItemResponse(
+                id=item.id,
+                title=item.title,
+                purchase_date=item.purchase_date,
+                received_date=item.received_date,
+                purchase_cost=item.purchase_cost,
+                batch_name=item.batch_name,
+                batch_id=item.batch_id,
+                batch_group=item.batch.name if item.batch else None,
+                sale_price=item.sale_price,
+                sale_date=item.sale_date,
+                vat_amount=item.vat_amount,
+                profit=item.profit,
+                days_to_sell=item.days_to_sell,
+                status=item.status.value,
+                payment_installments=item.payment_installments or 1
+            )
+            for item in items
+        ],
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages
+    )
 
 
 def parse_date_string(date_str: Optional[str]) -> Optional[date]:
@@ -341,6 +367,64 @@ def delete_multiple_items(item_ids: List[int], db: Session = Depends(get_db)):
     db.query(Product).filter(Product.id.in_(item_ids)).delete(synchronize_session=False)
     db.commit()
     return {"message": f"Deleted {len(item_ids)} items"}
+
+
+@router.get("/batch-groups")
+def get_batch_groups(db: Session = Depends(get_db)):
+    """Get all batch groups"""
+    batches = db.query(Batch).order_by(Batch.name).all()
+    return [{"id": b.id, "name": b.name} for b in batches]
+
+
+class BatchAssignRequest(BaseModel):
+    item_ids: Optional[List[int]] = None
+    batch_id: Optional[int] = None  # Existing batch ID
+    batch_name: Optional[str] = None  # New batch name (creates new batch)
+    all_items: bool = False
+    status_filter: Optional[str] = None
+    batch_filter: Optional[int] = None  # Filter by batch_id
+
+
+@router.post("/items/assign-batch")
+def assign_items_to_batch(request: BatchAssignRequest, db: Session = Depends(get_db)):
+    """Assign multiple items to a batch group"""
+    # Get or create batch
+    if request.batch_id:
+        batch = db.query(Batch).filter(Batch.id == request.batch_id).first()
+        if not batch:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        batch_id = batch.id
+        batch_name = batch.name
+    elif request.batch_name:
+        # Create new batch
+        batch = Batch(
+            name=request.batch_name,
+            total_cost=0,
+            item_count=0
+        )
+        db.add(batch)
+        db.flush()  # Get the ID
+        batch_id = batch.id
+        batch_name = batch.name
+    else:
+        raise HTTPException(status_code=400, detail="batch_id or batch_name required")
+
+    if request.all_items:
+        query = db.query(Product)
+        if request.status_filter:
+            query = query.filter(Product.status == request.status_filter)
+        if request.batch_filter:
+            query = query.filter(Product.batch_id == request.batch_filter)
+        count = query.update({Product.batch_id: batch_id}, synchronize_session=False)
+        db.commit()
+        return {"message": f"Assigned {count} items to batch '{batch_name}'"}
+    else:
+        db.query(Product).filter(Product.id.in_(request.item_ids)).update(
+            {Product.batch_id: batch_id},
+            synchronize_session=False
+        )
+        db.commit()
+        return {"message": f"Assigned {len(request.item_ids)} items to batch '{batch_name}'"}
 
 
 # Bulk add (batch) endpoints
@@ -525,15 +609,22 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     one_time_expenses = db.query(Expense).all()
     total_one_time = sum(e.amount for e in one_time_expenses)
 
-    # Recurring expenses (calculate for all active months)
+    # Recurring expenses (calculate for all active periods)
     recurring_expenses = db.query(RecurringExpense).filter(RecurringExpense.is_active == True).all()
     total_recurring = 0
     for rec in recurring_expenses:
-        # Count months this recurring expense has been active
         start = rec.start_date
         end = rec.end_date or date.today()
-        months_active = (end.year - start.year) * 12 + (end.month - start.month) + 1
-        total_recurring += rec.amount * max(0, months_active)
+        frequency = rec.frequency.value.lower() if rec.frequency else "monthly"
+
+        if frequency == "yearly":
+            # Count years this yearly expense has been active
+            years_active = end.year - start.year + 1
+            total_recurring += rec.amount * max(0, years_active)
+        else:
+            # Count months this monthly expense has been active
+            months_active = (end.year - start.year) * 12 + (end.month - start.month) + 1
+            total_recurring += rec.amount * max(0, months_active)
 
     total_expenses = total_one_time + total_recurring
     net_profit = total_profit - total_expenses
@@ -650,15 +741,30 @@ def get_monthly_stats(year: Optional[int] = None, db: Session = Depends(get_db))
     for r in recurring_expenses:
         if not r.is_active:
             continue
-        for month in range(1, 13):
-            month_start = date(year, month, 1)
-            if month == 12:
+        frequency = r.frequency.value.lower() if r.frequency else "monthly"
+
+        if frequency == "yearly":
+            # Yearly expenses only apply in the month matching the start_date's month
+            expense_month = r.start_date.month
+            month_start = date(year, expense_month, 1)
+            if expense_month == 12:
                 month_end = date(year, 12, 31)
             else:
-                month_end = date(year, month + 1, 1)
-            # Check if this recurring expense applies to this month
-            if r.start_date <= month_end and (r.end_date is None or r.end_date >= month_start):
-                monthly_data[month]["recurring_expenses"] += r.amount
+                month_end = date(year, expense_month + 1, 1)
+            # Check if this year falls within the expense's active period
+            if r.start_date.year <= year and (r.end_date is None or r.end_date >= month_start):
+                monthly_data[expense_month]["recurring_expenses"] += r.amount
+        else:
+            # Monthly expenses apply every month
+            for month in range(1, 13):
+                month_start = date(year, month, 1)
+                if month == 12:
+                    month_end = date(year, 12, 31)
+                else:
+                    month_end = date(year, month + 1, 1)
+                # Check if this recurring expense applies to this month
+                if r.start_date <= month_end and (r.end_date is None or r.end_date >= month_start):
+                    monthly_data[month]["recurring_expenses"] += r.amount
 
     # Convert to list
     month_names = ["jan", "feb", "mar", "apr", "mai", "jun",
@@ -670,12 +776,15 @@ def get_monthly_stats(year: Optional[int] = None, db: Session = Depends(get_db))
         total_expenses = data["expenses"] + data["recurring_expenses"]
         # Cashflow = Money IN (revenue) - Money OUT (stock purchases + all expenses)
         cashflow = data["revenue"] - data["stock_purchases"] - total_expenses
+        # Net profit = Gross profit - expenses (not including stock purchases, those are in gross profit)
+        net_profit = data["profit"] - total_expenses
 
         result.append(MonthlyStats(
             month=month_names[month - 1],
             year=year,
             revenue=data["revenue"],
-            profit=data["profit"],
+            profit=data["profit"],  # Gross profit
+            net_profit=net_profit,  # After expenses
             cashflow=cashflow,
             items_sold=data["items_sold"],
             expenses=total_expenses + data["stock_purchases"]  # Total money out
@@ -708,6 +817,7 @@ class RecurringExpenseCreate(BaseModel):
     amount: float
     category: str
     description: Optional[str] = None
+    frequency: str = "monthly"  # "monthly" or "yearly"
     start_date: str  # Accept string, parse later
     end_date: Optional[str] = None
     is_active: bool = True
@@ -717,6 +827,7 @@ class RecurringExpenseUpdate(BaseModel):
     amount: Optional[float] = None
     category: Optional[str] = None
     description: Optional[str] = None
+    frequency: Optional[str] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     is_active: Optional[bool] = None
@@ -727,6 +838,7 @@ class RecurringExpenseResponse(BaseModel):
     amount: float
     category: str
     description: Optional[str]
+    frequency: str
     start_date: date
     end_date: Optional[date]
     is_active: bool
@@ -739,16 +851,32 @@ class RecurringExpenseResponse(BaseModel):
 @router.get("/recurring-expenses", response_model=List[RecurringExpenseResponse])
 def get_recurring_expenses(db: Session = Depends(get_db)):
     """Get all recurring expenses"""
-    return db.query(RecurringExpense).order_by(RecurringExpense.start_date.desc()).all()
+    expenses = db.query(RecurringExpense).order_by(RecurringExpense.start_date.desc()).all()
+    return [
+        RecurringExpenseResponse(
+            id=e.id,
+            amount=e.amount,
+            category=e.category,
+            description=e.description,
+            frequency=e.frequency.value.lower() if e.frequency else "monthly",
+            start_date=e.start_date,
+            end_date=e.end_date,
+            is_active=e.is_active
+        )
+        for e in expenses
+    ]
 
 
 @router.post("/recurring-expenses", response_model=RecurringExpenseResponse)
 def create_recurring_expense(expense: RecurringExpenseCreate, db: Session = Depends(get_db)):
     """Create a recurring expense"""
+    # Convert lowercase to uppercase for enum
+    freq = ExpenseFrequency(expense.frequency.upper())
     db_expense = RecurringExpense(
         amount=expense.amount,
         category=expense.category,
         description=expense.description,
+        frequency=freq,
         start_date=parse_date_string(expense.start_date),
         end_date=parse_date_string(expense.end_date) if expense.end_date else None,
         is_active=expense.is_active
@@ -756,7 +884,16 @@ def create_recurring_expense(expense: RecurringExpenseCreate, db: Session = Depe
     db.add(db_expense)
     db.commit()
     db.refresh(db_expense)
-    return db_expense
+    return RecurringExpenseResponse(
+        id=db_expense.id,
+        amount=db_expense.amount,
+        category=db_expense.category,
+        description=db_expense.description,
+        frequency=db_expense.frequency.value.lower(),
+        start_date=db_expense.start_date,
+        end_date=db_expense.end_date,
+        is_active=db_expense.is_active
+    )
 
 
 @router.put("/recurring-expenses/{expense_id}", response_model=RecurringExpenseResponse)
@@ -773,12 +910,25 @@ def update_recurring_expense(expense_id: int, expense: RecurringExpenseUpdate, d
         if date_field in update_data and update_data[date_field]:
             update_data[date_field] = parse_date_string(update_data[date_field])
 
+    # Convert frequency string to enum
+    if 'frequency' in update_data and update_data['frequency']:
+        update_data['frequency'] = ExpenseFrequency(update_data['frequency'].upper())
+
     for key, value in update_data.items():
         setattr(db_expense, key, value)
 
     db.commit()
     db.refresh(db_expense)
-    return db_expense
+    return RecurringExpenseResponse(
+        id=db_expense.id,
+        amount=db_expense.amount,
+        category=db_expense.category,
+        description=db_expense.description,
+        frequency=db_expense.frequency.value.lower() if db_expense.frequency else "monthly",
+        start_date=db_expense.start_date,
+        end_date=db_expense.end_date,
+        is_active=db_expense.is_active
+    )
 
 
 @router.delete("/recurring-expenses/{expense_id}")
@@ -856,9 +1006,18 @@ def get_expenses_monthly_summary(year: Optional[int] = None, db: Session = Depen
         for r in recurring_expenses:
             if not r.is_active:
                 continue
-            # Check if this recurring expense applies to this month
-            if r.start_date <= month_end and (r.end_date is None or r.end_date >= month_start):
-                recurring_total += r.amount
+            frequency = r.frequency.value.lower() if r.frequency else "monthly"
+
+            if frequency == "yearly":
+                # Yearly expenses only apply in the month matching start_date's month
+                if month == r.start_date.month:
+                    # Check if this year falls within the expense's active period
+                    if r.start_date.year <= year and (r.end_date is None or r.end_date >= month_start):
+                        recurring_total += r.amount
+            else:
+                # Monthly expenses apply every month they're active
+                if r.start_date <= month_end and (r.end_date is None or r.end_date >= month_start):
+                    recurring_total += r.amount
 
         result.append({
             "month": month,
@@ -898,18 +1057,29 @@ def get_expenses_category_summary(year: Optional[int] = None, db: Session = Depe
         RecurringExpense.is_active == True
     ).all()
 
-    # Calculate months active for each recurring expense
-    def months_active_in_year(r, year):
-        count = 0
-        for month in range(1, 13):
-            month_start = date(year, month, 1)
-            if month == 12:
-                month_end = date(year, 12, 31)
-            else:
-                month_end = date(year, month + 1, 1)
-            if r.start_date <= month_end and (r.end_date is None or r.end_date >= month_start):
-                count += 1
-        return count
+    # Calculate periods active for each recurring expense
+    def periods_active_in_year(r, year):
+        frequency = r.frequency.value.lower() if r.frequency else "monthly"
+
+        if frequency == "yearly":
+            # Yearly expenses occur once per year if active
+            expense_month = r.start_date.month
+            month_start = date(year, expense_month, 1)
+            if r.start_date.year <= year and (r.end_date is None or r.end_date >= month_start):
+                return 1
+            return 0
+        else:
+            # Monthly expenses - count active months
+            count = 0
+            for month in range(1, 13):
+                month_start = date(year, month, 1)
+                if month == 12:
+                    month_end = date(year, 12, 31)
+                else:
+                    month_end = date(year, month + 1, 1)
+                if r.start_date <= month_end and (r.end_date is None or r.end_date >= month_start):
+                    count += 1
+            return count
 
     # Group by category
     category_data = {}
@@ -921,11 +1091,11 @@ def get_expenses_category_summary(year: Optional[int] = None, db: Session = Depe
         category_data[e.category]["count"] += 1
 
     for r in recurring_expenses:
-        months = months_active_in_year(r, year)
+        periods = periods_active_in_year(r, year)
         if r.category not in category_data:
             category_data[r.category] = {"total": 0, "count": 0}
-        category_data[r.category]["total"] += r.amount * months
-        category_data[r.category]["count"] += months
+        category_data[r.category]["total"] += r.amount * periods
+        category_data[r.category]["count"] += periods
 
     # Convert to list
     result = []

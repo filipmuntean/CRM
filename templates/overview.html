@@ -414,6 +414,15 @@
         </div>
 
         <!-- Charts -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div class="section-title" style="margin: 0;">Charts</div>
+            <select class="year-select" id="chartYearSelect" onchange="loadMonthlyData()">
+                <option value="2026">2026</option>
+                <option value="2025" selected>2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+            </select>
+        </div>
         <div class="charts-grid">
             <div class="chart-card">
                 <div class="chart-title">Monthly Revenue & Profit</div>
@@ -433,9 +442,11 @@
         <div class="table-card">
             <div class="table-header">
                 <div class="table-title">Monthly Breakdown</div>
-                <select class="year-select" id="yearSelect" onchange="loadMonthlyData()">
-                    <option value="2025">2025</option>
+                <select class="year-select" id="yearSelect" onchange="syncYearAndLoad()">
+                    <option value="2026">2026</option>
+                    <option value="2025" selected>2025</option>
                     <option value="2024">2024</option>
+                    <option value="2023">2023</option>
                 </select>
             </div>
             <table>
@@ -443,14 +454,15 @@
                     <tr>
                         <th>Month</th>
                         <th class="text-right">Revenue</th>
-                        <th class="text-right">Profit</th>
+                        <th class="text-right">Gross Profit</th>
+                        <th class="text-right">Net Profit</th>
                         <th class="text-right">Cashflow</th>
                         <th class="text-right">Items Sold</th>
                         <th class="text-right">Expenses</th>
                     </tr>
                 </thead>
                 <tbody id="monthlyTable">
-                    <tr><td colspan="6" class="loading">Loading...</td></tr>
+                    <tr><td colspan="7" class="loading">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -512,9 +524,19 @@
             }
         }
 
+        // Sync table year selector with chart and load
+        function syncYearAndLoad() {
+            const tableYear = document.getElementById('yearSelect').value;
+            document.getElementById('chartYearSelect').value = tableYear;
+            loadMonthlyData();
+        }
+
         // Load monthly data
         async function loadMonthlyData() {
-            const year = document.getElementById('yearSelect').value;
+            // Sync both year selectors
+            const chartYear = document.getElementById('chartYearSelect').value;
+            document.getElementById('yearSelect').value = chartYear;
+            const year = chartYear;
 
             try {
                 const response = await fetch(`/api/inventory/stats/monthly?year=${year}`);
@@ -527,6 +549,7 @@
                         <td>${row.month} ${row.year}</td>
                         <td class="text-right">${formatCurrency(row.revenue)}</td>
                         <td class="text-right ${row.profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.profit)}</td>
+                        <td class="text-right ${row.net_profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.net_profit)}</td>
                         <td class="text-right ${row.cashflow >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.cashflow)}</td>
                         <td class="text-right">${row.items_sold}</td>
                         <td class="text-right ${row.expenses > 0 ? 'negative' : ''}">${formatCurrency(row.expenses)}</td>
@@ -537,16 +560,18 @@
                 const totals = data.reduce((acc, row) => ({
                     revenue: acc.revenue + row.revenue,
                     profit: acc.profit + row.profit,
+                    net_profit: acc.net_profit + row.net_profit,
                     cashflow: acc.cashflow + row.cashflow,
                     items_sold: acc.items_sold + row.items_sold,
                     expenses: acc.expenses + row.expenses
-                }), { revenue: 0, profit: 0, cashflow: 0, items_sold: 0, expenses: 0 });
+                }), { revenue: 0, profit: 0, net_profit: 0, cashflow: 0, items_sold: 0, expenses: 0 });
 
                 tbody.innerHTML += `
                     <tr style="font-weight: 600; background: #f8f9fa;">
                         <td>Total</td>
                         <td class="text-right">${formatCurrency(totals.revenue)}</td>
                         <td class="text-right ${totals.profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.profit)}</td>
+                        <td class="text-right ${totals.net_profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.net_profit)}</td>
                         <td class="text-right ${totals.cashflow >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.cashflow)}</td>
                         <td class="text-right">${totals.items_sold}</td>
                         <td class="text-right negative">${formatCurrency(totals.expenses)}</td>
@@ -564,7 +589,8 @@
         function updateCharts(data) {
             const labels = data.map(d => d.month);
             const revenue = data.map(d => d.revenue);
-            const profit = data.map(d => d.profit);
+            const grossProfit = data.map(d => d.profit);
+            const netProfit = data.map(d => d.net_profit);
             const cashflow = data.map(d => d.cashflow);
 
             // Monthly chart
@@ -581,9 +607,15 @@
                             borderRadius: 4
                         },
                         {
-                            label: 'Profit',
-                            data: profit,
+                            label: 'Gross Profit',
+                            data: grossProfit,
                             backgroundColor: '#34a853',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Net Profit',
+                            data: netProfit,
+                            backgroundColor: '#fbbc04',
                             borderRadius: 4
                         }
                     ]

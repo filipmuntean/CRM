@@ -251,17 +251,25 @@
         }
 
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             padding: 8px 12px;
             border: 1px solid #dadce0;
             border-radius: 4px;
             font-size: 14px;
+            width: 100%;
         }
 
         .form-group input:focus,
-        .form-group select:focus {
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: #1a73e8;
+        }
+
+        .form-group textarea {
+            font-family: monospace;
+            resize: vertical;
         }
 
         /* Collapsible months */
@@ -496,7 +504,8 @@
                         <tr>
                             <th>Category</th>
                             <th>Description</th>
-                            <th class="text-right">Amount/Month</th>
+                            <th class="text-right">Amount</th>
+                            <th>Frequency</th>
                             <th>Start Date</th>
                             <th>End Date</th>
                             <th>Status</th>
@@ -504,7 +513,7 @@
                         </tr>
                     </thead>
                     <tbody id="recurringTable">
-                        <tr><td colspan="7" class="empty-state">Loading...</td></tr>
+                        <tr><td colspan="8" class="empty-state">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -526,6 +535,7 @@
                         <button class="toggle-btn" onclick="setView('category')" id="categoryBtn">Category</button>
                     </div>
                     <button class="btn btn-primary" onclick="openExpenseModal()">+ Add Expense</button>
+                    <button class="btn btn-secondary" onclick="openBulkExpenseModal()">Import Expenses</button>
                 </div>
             </div>
             <div class="card-body" id="expensesContent">
@@ -563,9 +573,18 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Amount (per month)</label>
+                        <label>Amount</label>
                         <input type="number" id="recurringAmount" step="0.01" placeholder="0.00">
                     </div>
+                    <div class="form-group">
+                        <label>Frequency</label>
+                        <select id="recurringFrequency">
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label>Description</label>
                         <input type="text" id="recurringDescription" placeholder="e.g., Storage unit rental">
@@ -646,6 +665,44 @@
         </div>
     </div>
 
+    <!-- Bulk Expense Import Modal -->
+    <div class="modal-overlay" id="bulkExpenseModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Import Expenses from Excel</div>
+                <button class="modal-close" onclick="closeBulkExpenseModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #5f6368; margin-bottom: 16px; font-size: 14px;">
+                    Paste data from Excel. Supported format:<br>
+                    <code style="background: #f1f3f4; padding: 2px 6px; border-radius: 4px;">amount    category    (ignored)    date</code><br>
+                    Example: <code>10,3    consumables    -10,3    14.10.2024</code>
+                </p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Paste Data (Tab-separated)</label>
+                        <textarea class="form-input" id="bulkExpenseData" rows="10" placeholder="Paste from Excel...
+10,3	consumables	-10,3	14.10.2024
+1,56	consumables	-1,56	14.10.2024"></textarea>
+                    </div>
+                </div>
+                <div id="bulkExpenseProgress" style="display: none; margin-top: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+                        <span id="bulkExpenseProgressText">Importing...</span>
+                        <span id="bulkExpenseProgressCount">0 / 0</span>
+                    </div>
+                    <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
+                        <div id="bulkExpenseProgressBar" style="background: #1a73e8; height: 100%; width: 0%; transition: width 0.1s;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBulkExpenseModal()">Cancel</button>
+                <button class="btn btn-primary" id="bulkExpenseImportBtn" onclick="importBulkExpenses()">Import</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentView = 'monthly';
         let batches = [];
@@ -687,7 +744,7 @@
 
                 const tbody = document.getElementById('recurringTable');
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No recurring expenses yet</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No recurring expenses yet</td></tr>';
                     return;
                 }
 
@@ -696,6 +753,7 @@
                         <td>${exp.category}</td>
                         <td>${exp.description || '-'}</td>
                         <td class="text-right negative">${formatCurrency(exp.amount)}</td>
+                        <td>${exp.frequency === 'yearly' ? 'Yearly' : 'Monthly'}</td>
                         <td>${formatDate(exp.start_date)}</td>
                         <td>${exp.end_date ? formatDate(exp.end_date) : 'Ongoing'}</td>
                         <td>
@@ -879,6 +937,7 @@
             // Clear form
             document.getElementById('recurringCategory').value = '';
             document.getElementById('recurringAmount').value = '';
+            document.getElementById('recurringFrequency').value = 'monthly';
             document.getElementById('recurringDescription').value = '';
             document.getElementById('recurringStartDate').value = '';
             document.getElementById('recurringEndDate').value = '';
@@ -920,6 +979,7 @@
             const data = {
                 category: category,
                 amount: parseFloat(document.getElementById('recurringAmount').value),
+                frequency: document.getElementById('recurringFrequency').value,
                 description: document.getElementById('recurringDescription').value || null,
                 start_date: document.getElementById('recurringStartDate').value,
                 end_date: document.getElementById('recurringEndDate').value || null,
@@ -1029,6 +1089,131 @@
             } catch (error) {
                 console.error('Error:', error);
             }
+        }
+
+        // Bulk expense import functions
+        function openBulkExpenseModal() {
+            document.getElementById('bulkExpenseModal').classList.add('show');
+        }
+
+        function closeBulkExpenseModal() {
+            document.getElementById('bulkExpenseModal').classList.remove('show');
+            document.getElementById('bulkExpenseData').value = '';
+            document.getElementById('bulkExpenseProgress').style.display = 'none';
+            document.getElementById('bulkExpenseProgressBar').style.width = '0%';
+            document.getElementById('bulkExpenseImportBtn').disabled = false;
+            document.getElementById('bulkExpenseImportBtn').textContent = 'Import';
+        }
+
+        async function importBulkExpenses() {
+            const data = document.getElementById('bulkExpenseData').value;
+            if (!data.trim()) {
+                alert('Please paste expense data');
+                return;
+            }
+
+            const lines = data.trim().split('\n');
+            let imported = 0;
+            let errors = 0;
+
+            // Show progress
+            const progressDiv = document.getElementById('bulkExpenseProgress');
+            const progressBar = document.getElementById('bulkExpenseProgressBar');
+            const progressCount = document.getElementById('bulkExpenseProgressCount');
+            const progressText = document.getElementById('bulkExpenseProgressText');
+            const importBtn = document.getElementById('bulkExpenseImportBtn');
+
+            progressDiv.style.display = 'block';
+            importBtn.disabled = true;
+            importBtn.textContent = 'Importing...';
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                // Split by tab or multiple spaces (2+)
+                let cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
+                if (cols.length < 3) {
+                    // Try splitting by multiple spaces
+                    cols = line.split(/\s{2,}/).map(c => c.trim()).filter(c => c !== '');
+                }
+
+                // Need at least: amount, category, and date (the negative amount col might be missing)
+                if (cols.length < 3) {
+                    errors++;
+                    continue;
+                }
+
+                // Format: amount, category, (ignored negative), date
+                // Example: 10,3    consumables    -10,3    14.10.2024
+                // Or: 10,3    consumables    14.10.2024 (if negative is missing)
+                const amount = parseFloat(cols[0].replace(',', '.'));
+                const category = cols[1].trim();
+
+                // Date is the last column (could be cols[2] or cols[3])
+                let dateStr = cols[cols.length - 1].trim();
+
+                // Skip rows with empty amount or missing date
+                if (isNaN(amount) || amount === 0 || !category || !dateStr) {
+                    errors++;
+                    continue;
+                }
+
+                // Check if dateStr looks like a date (contains . or /)
+                if (!dateStr.includes('.') && !dateStr.includes('/') && !dateStr.includes('-')) {
+                    errors++;
+                    continue;
+                }
+
+                // Parse date (DD.MM.YYYY format)
+                let parsedDate = dateStr;
+                if (dateStr.includes('.')) {
+                    const parts = dateStr.split('.');
+                    if (parts.length === 3) {
+                        parsedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                    }
+                }
+
+                const expenseData = {
+                    amount: amount,
+                    category: category,
+                    description: null,
+                    expense_date: parsedDate,
+                    batch_id: null
+                };
+
+                try {
+                    const response = await fetch('/api/inventory/expenses', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(expenseData)
+                    });
+
+                    if (response.ok) {
+                        imported++;
+                    } else {
+                        errors++;
+                    }
+                } catch (e) {
+                    errors++;
+                }
+
+                // Update progress
+                const percent = Math.round(((i + 1) / lines.length) * 100);
+                progressBar.style.width = percent + '%';
+                progressCount.textContent = `${i + 1} / ${lines.length}`;
+                progressText.textContent = `Imported ${imported}${errors > 0 ? `, ${errors} errors` : ''}`;
+            }
+
+            // Done
+            progressBar.style.width = '100%';
+            progressBar.style.background = errors > 0 ? '#fbbc04' : '#34a853';
+            progressText.textContent = `Done! ${imported} imported${errors > 0 ? `, ${errors} skipped` : ''}`;
+
+            setTimeout(() => {
+                closeBulkExpenseModal();
+                loadExpenses();
+            }, 1500);
         }
 
         // Initialize

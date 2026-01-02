@@ -149,14 +149,20 @@ class Expense(Base):
         return f"<Expense(id={self.id}, category='{self.category}', amount={self.amount})>"
 
 
+class ExpenseFrequency(str, enum.Enum):
+    MONTHLY = "MONTHLY"
+    YEARLY = "YEARLY"
+
+
 class RecurringExpense(Base):
-    """Track recurring monthly expenses (storage, subscriptions, etc.)"""
+    """Track recurring expenses (storage, subscriptions, etc.)"""
     __tablename__ = "recurring_expenses"
 
     id = Column(Integer, primary_key=True, index=True)
     amount = Column(Float, nullable=False)
     category = Column(String(100), nullable=False)
     description = Column(String(255), nullable=True)
+    frequency = Column(Enum(ExpenseFrequency), default=ExpenseFrequency.MONTHLY)  # monthly or yearly
     start_date = Column(Date, nullable=False)  # When this expense starts
     end_date = Column(Date, nullable=True)  # When it ends (null = indefinite)
     is_active = Column(Boolean, default=True)  # Can be paused manually
