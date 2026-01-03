@@ -55,9 +55,14 @@ class SyncService:
             PlatformListing.platform == platform
         ).first()
 
+        # Append SKU to description for cross-platform tracking
+        description = product.description or ""
+        if product.sku:
+            description += f"\n\n---\nSKU: {product.sku}"
+
         product_data = {
             "title": product.title,
-            "description": product.description,
+            "description": description,
             "price": product.price,
             "images": product.images,
             "category": product.category,

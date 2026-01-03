@@ -1,11 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, case
 from typing import List, Optional
 from datetime import date, datetime
 from pydantic import BaseModel
 from app.core.database import get_db
-from app.models.product import Product, ProductStatus, Batch, Expense, RecurringExpense, ExpenseFrequency
+from app.models.product import Product, ProductStatus, Batch, Expense, RecurringExpense, ExpenseFrequency, generate_sku
+import os
+import uuid
+import shutil
+from pathlib import Path
+
+# Image upload config
+UPLOAD_DIR = Path("static/uploads/products")
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB per file
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -26,6 +36,7 @@ class InventoryItemCreate(BaseModel):
 
 class InventoryItemUpdate(BaseModel):
     title: Optional[str] = None
+    description: Optional[str] = None
     purchase_date: Optional[str] = None
     received_date: Optional[str] = None
     purchase_cost: Optional[float] = None
@@ -35,11 +46,20 @@ class InventoryItemUpdate(BaseModel):
     vat_amount: Optional[float] = None
     status: Optional[str] = None
     payment_installments: Optional[int] = None
+    # Listing fields for cross-posting
+    images: Optional[List[str]] = None  # List of image URLs
+    category: Optional[str] = None
+    size: Optional[str] = None
+    condition: Optional[str] = None
+    brand: Optional[str] = None
+    color: Optional[str] = None
 
 
 class InventoryItemResponse(BaseModel):
     id: int
+    sku: Optional[str]  # Unique SKU for cross-platform linking
     title: str
+    description: Optional[str] = None
     purchase_date: Optional[date]
     received_date: Optional[date]
     purchase_cost: Optional[float]
@@ -50,21 +70,30 @@ class InventoryItemResponse(BaseModel):
     sale_date: Optional[date]
     vat_amount: Optional[float]
     profit: float
-    days_to_sell: int
+    days_to_sell: Optional[int] = None  # None when not sold, 0+ when sold
     status: str
     payment_installments: int = 1
+    # Listing fields for cross-posting
+    images: Optional[List[str]] = None
+    category: Optional[str] = None
+    size: Optional[str] = None
+    condition: Optional[str] = None
+    brand: Optional[str] = None
+    color: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 
 class BulkAddRequest(BaseModel):
-    batch_name: str
+    batch_name: str  # Product name for individual items
     total_cost: float
     item_count: int
     purchase_date: Optional[date] = None
     received_date: Optional[date] = None
     notes: Optional[str] = None
+    batch_id: Optional[int] = None  # Existing batch group ID
+    batch_group_name: Optional[str] = None  # New batch group name (if not using existing)
 
 
 class BatchResponse(BaseModel):
@@ -147,6 +176,11 @@ class PaginatedInventoryResponse(BaseModel):
     page: int
     per_page: int
     total_pages: int
+    # Summary totals for ALL matching items (not just current page)
+    summary_investment: float = 0
+    summary_revenue: float = 0
+    summary_profit: float = 0
+    summary_sold_count: int = 0
 
 
 # Inventory endpoints
@@ -154,31 +188,107 @@ class PaginatedInventoryResponse(BaseModel):
 def get_inventory_items(
     status: Optional[str] = None,
     batch_name: Optional[str] = None,
+    batch_id: Optional[int] = None,
+    no_batch: Optional[bool] = None,  # Filter for items without batch
+    search: Optional[str] = None,
+    sale_month: Optional[int] = None,  # Filter by sale month (1-12)
+    sale_year: Optional[int] = None,   # Filter by sale year
+    sort_by: Optional[str] = "purchase_date",
+    sort_dir: Optional[str] = "desc",
     page: int = 1,
     per_page: int = 100,
     db: Session = Depends(get_db)
 ):
-    """Get all inventory items with optional filtering and pagination"""
+    """Get all inventory items with optional filtering, search, sort and pagination"""
     query = db.query(Product)
 
     if status:
         query = query.filter(Product.status == status)
     if batch_name:
         query = query.filter(Product.batch_name == batch_name)
+    if no_batch:
+        query = query.filter(Product.batch_id == None)
+    elif batch_id:
+        query = query.filter(Product.batch_id == batch_id)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Product.title.ilike(search_term)) |
+            (Product.batch_name.ilike(search_term))
+        )
+    # Server-side month/year filtering on sale_date
+    if sale_month:
+        query = query.filter(extract('month', Product.sale_date) == sale_month)
+    if sale_year:
+        query = query.filter(extract('year', Product.sale_date) == sale_year)
 
-    # Get total count
+    # Apply sorting - only use valid database columns
+    valid_sort_columns = {
+        'sku': Product.sku,
+        'title': Product.title,
+        'purchase_date': Product.purchase_date,
+        'received_date': Product.received_date,
+        'purchase_cost': Product.purchase_cost,
+        'batch_name': Product.batch_name,
+        'sale_price': Product.sale_price,
+        'sale_date': Product.sale_date,
+        'status': Product.status,
+        'created_at': Product.created_at,
+    }
+    sort_column = valid_sort_columns.get(sort_by, Product.created_at)
+    if sort_dir == "asc":
+        # Secondary sort by created_at desc to keep newest at top when primary values are equal
+        query = query.order_by(sort_column.asc().nullslast(), Product.created_at.desc())
+    else:
+        query = query.order_by(sort_column.desc().nullslast(), Product.created_at.desc())
+
+    # Get total count for pagination
     total = query.count()
     total_pages = (total + per_page - 1) // per_page  # Ceiling division
 
-    # Get paginated items
+    # Get paginated items first (more efficient than loading all)
     skip = (page - 1) * per_page
-    items = query.order_by(Product.purchase_date.desc()).offset(skip).limit(per_page).all()
+    items = query.offset(skip).limit(per_page).all()
+
+    # Calculate summary totals using aggregate queries (efficient for large datasets)
+    # Note: profit is calculated as (sale_price - purchase_cost) since Product.profit is a Python property
+    summary_query = db.query(
+        func.sum(Product.purchase_cost).label('investment'),
+        func.sum(case((Product.sale_date != None, Product.sale_price), else_=0)).label('revenue'),
+        func.sum(case((Product.sale_date != None, Product.sale_price - Product.purchase_cost), else_=0)).label('profit'),
+        func.sum(case((Product.sale_date != None, 1), else_=0)).label('sold_count')
+    )
+    # Apply same filters to summary query
+    if status:
+        summary_query = summary_query.filter(Product.status == status)
+    if no_batch:
+        summary_query = summary_query.filter(Product.batch_id == None)
+    elif batch_id:
+        summary_query = summary_query.filter(Product.batch_id == batch_id)
+    if search:
+        search_term = f"%{search}%"
+        summary_query = summary_query.filter(
+            (Product.title.ilike(search_term)) |
+            (Product.batch_name.ilike(search_term))
+        )
+    if sale_month:
+        summary_query = summary_query.filter(extract('month', Product.sale_date) == sale_month)
+    if sale_year:
+        summary_query = summary_query.filter(extract('year', Product.sale_date) == sale_year)
+
+    summary = summary_query.first()
+    summary_investment = summary.investment or 0
+    summary_revenue = summary.revenue or 0
+    summary_profit = summary.profit or 0
+    summary_sold_count = summary.sold_count or 0
 
     return PaginatedInventoryResponse(
         items=[
             InventoryItemResponse(
                 id=item.id,
+                sku=item.sku,
                 title=item.title,
+                description=item.description,
                 purchase_date=item.purchase_date,
                 received_date=item.received_date,
                 purchase_cost=item.purchase_cost,
@@ -191,14 +301,24 @@ def get_inventory_items(
                 profit=item.profit,
                 days_to_sell=item.days_to_sell,
                 status=item.status.value,
-                payment_installments=item.payment_installments or 1
+                payment_installments=item.payment_installments or 1,
+                images=item.images,
+                category=item.category,
+                size=item.size,
+                condition=item.condition,
+                brand=item.brand,
+                color=item.color
             )
             for item in items
         ],
         total=total,
         page=page,
         per_page=per_page,
-        total_pages=total_pages
+        total_pages=total_pages,
+        summary_investment=summary_investment,
+        summary_revenue=summary_revenue,
+        summary_profit=summary_profit,
+        summary_sold_count=summary_sold_count
     )
 
 
@@ -268,6 +388,7 @@ def create_inventory_item(item: InventoryItemCreate, db: Session = Depends(get_d
     status = ProductStatus.SOLD if sale_date else ProductStatus.ACTIVE
 
     db_item = Product(
+        sku=generate_sku(),
         title=item.title,
         price=item.sale_price or item.purchase_cost,
         purchase_date=purchase_date,
@@ -288,18 +409,28 @@ def create_inventory_item(item: InventoryItemCreate, db: Session = Depends(get_d
 
     return InventoryItemResponse(
         id=db_item.id,
+        sku=db_item.sku,
         title=db_item.title,
+        description=db_item.description,
         purchase_date=db_item.purchase_date,
         received_date=db_item.received_date,
         purchase_cost=db_item.purchase_cost,
         batch_name=db_item.batch_name,
+        batch_id=db_item.batch_id,
+        batch_group=db_item.batch.name if db_item.batch else None,
         sale_price=db_item.sale_price,
         sale_date=db_item.sale_date,
         vat_amount=db_item.vat_amount,
         profit=db_item.profit,
         days_to_sell=db_item.days_to_sell,
         status=db_item.status.value,
-        payment_installments=db_item.payment_installments or 1
+        payment_installments=db_item.payment_installments or 1,
+        images=db_item.images,
+        category=db_item.category,
+        size=db_item.size,
+        condition=db_item.condition,
+        brand=db_item.brand,
+        color=db_item.color
     )
 
 
@@ -334,18 +465,28 @@ def update_inventory_item(item_id: int, item: InventoryItemUpdate, db: Session =
 
     return InventoryItemResponse(
         id=db_item.id,
+        sku=db_item.sku,
         title=db_item.title,
+        description=db_item.description,
         purchase_date=db_item.purchase_date,
         received_date=db_item.received_date,
         purchase_cost=db_item.purchase_cost,
         batch_name=db_item.batch_name,
+        batch_id=db_item.batch_id,
+        batch_group=db_item.batch.name if db_item.batch else None,
         sale_price=db_item.sale_price,
         sale_date=db_item.sale_date,
         vat_amount=db_item.vat_amount,
         profit=db_item.profit,
         days_to_sell=db_item.days_to_sell,
         status=db_item.status.value,
-        payment_installments=db_item.payment_installments or 1
+        payment_installments=db_item.payment_installments or 1,
+        images=db_item.images,
+        category=db_item.category,
+        size=db_item.size,
+        condition=db_item.condition,
+        brand=db_item.brand,
+        color=db_item.color
     )
 
 
@@ -361,12 +502,125 @@ def delete_inventory_item(item_id: int, db: Session = Depends(get_db)):
     return {"message": "Item deleted"}
 
 
+class BulkDeleteRequest(BaseModel):
+    item_ids: Optional[List[int]] = None
+    all_items: bool = False
+    status_filter: Optional[str] = None
+    batch_filter: Optional[int] = None
+
+
 @router.delete("/items")
-def delete_multiple_items(item_ids: List[int], db: Session = Depends(get_db)):
+def delete_multiple_items(request: BulkDeleteRequest, db: Session = Depends(get_db)):
     """Delete multiple inventory items"""
-    db.query(Product).filter(Product.id.in_(item_ids)).delete(synchronize_session=False)
+    if request.all_items:
+        query = db.query(Product)
+        if request.status_filter:
+            query = query.filter(Product.status == request.status_filter)
+        if request.batch_filter:
+            query = query.filter(Product.batch_id == request.batch_filter)
+        count = query.delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"Deleted {count} items"}
+    else:
+        if not request.item_ids:
+            return {"message": "No items to delete"}
+        db.query(Product).filter(Product.id.in_(request.item_ids)).delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"Deleted {len(request.item_ids)} items"}
+
+
+@router.post("/generate-skus")
+def generate_missing_skus(db: Session = Depends(get_db)):
+    """Generate SKUs for all products that don't have one"""
+    products_without_sku = db.query(Product).filter(Product.sku == None).all()
+    count = 0
+    for product in products_without_sku:
+        product.sku = generate_sku()
+        count += 1
     db.commit()
-    return {"message": f"Deleted {len(item_ids)} items"}
+    return {"message": f"Generated {count} SKUs"}
+
+
+@router.post("/items/{item_id}/images")
+async def upload_product_images(
+    item_id: int,
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db)
+):
+    """Upload images for a product"""
+    # Check product exists
+    product = db.query(Product).filter(Product.id == item_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Create product directory
+    product_dir = UPLOAD_DIR / str(item_id)
+    product_dir.mkdir(parents=True, exist_ok=True)
+
+    uploaded_urls = []
+    errors = []
+
+    for file in files:
+        # Validate extension
+        ext = Path(file.filename).suffix.lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            errors.append(f"{file.filename}: Invalid file type")
+            continue
+
+        # Generate unique filename
+        unique_name = f"{uuid.uuid4().hex}{ext}"
+        file_path = product_dir / unique_name
+
+        try:
+            # Save file
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+            # Generate URL path
+            url = f"/static/uploads/products/{item_id}/{unique_name}"
+            uploaded_urls.append(url)
+        except Exception as e:
+            errors.append(f"{file.filename}: {str(e)}")
+
+    # Update product images (append to existing)
+    current_images = product.images or []
+    product.images = current_images + uploaded_urls
+    db.commit()
+
+    return {
+        "uploaded": uploaded_urls,
+        "total_images": len(product.images),
+        "errors": errors if errors else None
+    }
+
+
+@router.delete("/items/{item_id}/images")
+def delete_product_image(
+    item_id: int,
+    image_url: str,
+    db: Session = Depends(get_db)
+):
+    """Delete a specific image from a product"""
+    product = db.query(Product).filter(Product.id == item_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    if not product.images or image_url not in product.images:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    # Remove from database
+    product.images = [img for img in product.images if img != image_url]
+    db.commit()
+
+    # Delete file from disk
+    try:
+        file_path = Path("." + image_url)  # Convert URL to path
+        if file_path.exists():
+            file_path.unlink()
+    except Exception:
+        pass  # File might already be deleted
+
+    return {"message": "Image deleted", "remaining_images": len(product.images)}
 
 
 @router.get("/batch-groups")
@@ -380,6 +634,7 @@ class BatchAssignRequest(BaseModel):
     item_ids: Optional[List[int]] = None
     batch_id: Optional[int] = None  # Existing batch ID
     batch_name: Optional[str] = None  # New batch name (creates new batch)
+    remove_batch: bool = False  # Remove items from batch (set batch_id to null)
     all_items: bool = False
     status_filter: Optional[str] = None
     batch_filter: Optional[int] = None  # Filter by batch_id
@@ -387,7 +642,26 @@ class BatchAssignRequest(BaseModel):
 
 @router.post("/items/assign-batch")
 def assign_items_to_batch(request: BatchAssignRequest, db: Session = Depends(get_db)):
-    """Assign multiple items to a batch group"""
+    """Assign multiple items to a batch group or remove from batch"""
+    # Handle remove from batch
+    if request.remove_batch:
+        if request.all_items:
+            query = db.query(Product)
+            if request.status_filter:
+                query = query.filter(Product.status == request.status_filter)
+            if request.batch_filter:
+                query = query.filter(Product.batch_id == request.batch_filter)
+            count = query.update({Product.batch_id: None}, synchronize_session=False)
+            db.commit()
+            return {"message": f"Removed {count} items from batch"}
+        else:
+            db.query(Product).filter(Product.id.in_(request.item_ids)).update(
+                {Product.batch_id: None},
+                synchronize_session=False
+            )
+            db.commit()
+            return {"message": f"Removed {len(request.item_ids)} items from batch"}
+
     # Get or create batch
     if request.batch_id:
         batch = db.query(Batch).filter(Batch.id == request.batch_id).first()
@@ -431,16 +705,27 @@ def assign_items_to_batch(request: BatchAssignRequest, db: Session = Depends(get
 @router.post("/bulk-add", response_model=BatchResponse)
 def bulk_add_items(request: BulkAddRequest, db: Session = Depends(get_db)):
     """Add a batch of items (e.g., 100 items for €700 = €7 each)"""
-    # Create the batch
-    batch = Batch(
-        name=request.batch_name,
-        total_cost=request.total_cost,
-        item_count=request.item_count,
-        purchase_date=request.purchase_date,
-        received_date=request.received_date,
-        notes=request.notes
-    )
-    db.add(batch)
+    # Get existing batch or create new one
+    if request.batch_id:
+        # Use existing batch
+        batch = db.query(Batch).filter(Batch.id == request.batch_id).first()
+        if not batch:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        # Update batch totals
+        batch.total_cost = (batch.total_cost or 0) + request.total_cost
+        batch.item_count = (batch.item_count or 0) + request.item_count
+    else:
+        # Create new batch with provided name or fallback to product name
+        batch_name = request.batch_group_name or request.batch_name
+        batch = Batch(
+            name=batch_name,
+            total_cost=request.total_cost,
+            item_count=request.item_count,
+            purchase_date=request.purchase_date,
+            received_date=request.received_date,
+            notes=request.notes
+        )
+        db.add(batch)
     db.flush()
 
     cost_per_item = request.total_cost / request.item_count
@@ -448,6 +733,7 @@ def bulk_add_items(request: BulkAddRequest, db: Session = Depends(get_db)):
     # Create individual items
     for i in range(request.item_count):
         item = Product(
+            sku=generate_sku(),
             title=f"{request.batch_name} #{i+1}",
             price=cost_per_item,
             purchase_date=request.purchase_date,

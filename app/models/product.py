@@ -3,6 +3,16 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 import enum
+import uuid
+import time
+
+
+def generate_sku():
+    """Generate a unique SKU like RL-XXXXXXXX"""
+    # Use timestamp + random to ensure uniqueness
+    timestamp = hex(int(time.time() * 1000))[-6:]  # Last 6 hex chars of timestamp
+    random_part = uuid.uuid4().hex[:4].upper()  # 4 random hex chars
+    return f"RL-{timestamp.upper()}{random_part}"
 
 
 class ProductStatus(str, enum.Enum):
@@ -16,6 +26,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True)
+    sku = Column(String(20), unique=True, index=True, nullable=True)  # Unique SKU for cross-platform linking
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     price = Column(Float, nullable=False)
@@ -57,10 +68,10 @@ class Product(Base):
 
     @property
     def days_to_sell(self):
-        """Calculate days from purchase to sale"""
-        if self.sale_date and self.purchase_date:
-            return (self.sale_date - self.purchase_date).days
-        return 0
+        """Calculate days from received date to sale date"""
+        if self.sale_date and self.received_date:
+            return (self.sale_date - self.received_date).days
+        return None  # Return None when not sold, 0 when sold same day
 
     def __repr__(self):
         return f"<Product(id={self.id}, title='{self.title}', status='{self.status}')>"
