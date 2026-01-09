@@ -213,6 +213,7 @@ def get_inventory_items(
     if search:
         search_term = f"%{search}%"
         query = query.filter(
+            (Product.sku.ilike(search_term)) |
             (Product.title.ilike(search_term)) |
             (Product.batch_name.ilike(search_term))
         )
