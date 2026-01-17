@@ -17,6 +17,7 @@ def generate_sku():
 
 class ProductStatus(str, enum.Enum):
     ACTIVE = "active"
+    POSTED = "posted"
     SOLD = "sold"
     PENDING = "pending"
     INACTIVE = "inactive"

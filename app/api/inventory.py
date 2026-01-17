@@ -542,6 +542,18 @@ def generate_missing_skus(db: Session = Depends(get_db)):
     return {"message": f"Generated {count} SKUs"}
 
 
+@router.post("/mark-posted/{sku}")
+def mark_item_as_posted(sku: str, db: Session = Depends(get_db)):
+    """Mark an item as posted by SKU"""
+    product = db.query(Product).filter(Product.sku == sku).first()
+    if not product:
+        raise HTTPException(status_code=404, detail=f"Product with SKU '{sku}' not found")
+
+    product.status = ProductStatus.POSTED
+    db.commit()
+    return {"message": f"Item '{product.title}' marked as posted", "sku": sku}
+
+
 @router.post("/items/{item_id}/images")
 async def upload_product_images(
     item_id: int,

@@ -42,7 +42,7 @@ venv.bak/
 *.db
 *.sqlite
 *.sqlite3
-crm.db
+
 
 # Google Sheets credentials
 credentials.json
