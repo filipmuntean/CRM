@@ -3,201 +3,440 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Overview - CRM</title>
+    <title>Overview - ReLoomer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --bg-primary: #fafaf9;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f5f5f4;
+            --text-primary: #18181b;
+            --text-secondary: #52525b;
+            --text-muted: #a1a1aa;
+            --border-color: #e4e4e7;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
+        html {
+            scroll-behavior: smooth;
         }
 
-        /* Navigation */
-        .nav {
-            background: #fff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 12px 24px;
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Layout */
+        .app-layout {
             display: flex;
-            align-items: center;
-            gap: 24px;
-            position: sticky;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
             top: 0;
+            left: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             z-index: 100;
         }
 
-        .nav-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1a73e8;
+        .sidebar-brand {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .nav-tabs {
+        .sidebar-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border-radius: var(--radius-sm);
             display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .nav-item.active {
+            color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            opacity: 0.7;
+        }
+
+        .nav-item.active svg {
+            opacity: 1;
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            margin-left: 240px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .sidebar-nav {
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 12px;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* Page header */
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .page-subtitle {
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        /* Section headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            margin-top: 40px;
+        }
+
+        .section-header:first-child {
+            margin-top: 0;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* Hero stats - the big important ones */
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .hero-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hero-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hero-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .hero-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .hero-card.featured {
+            background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+            border: none;
+        }
+
+        .hero-card.featured .hero-label,
+        .hero-card.featured .hero-subvalue {
+            color: rgba(255,255,255,0.6);
+        }
+
+        .hero-card.featured .hero-value {
+            color: #ffffff;
+        }
+
+        .hero-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
             gap: 8px;
         }
 
-        .nav-tab {
-            padding: 8px 16px;
-            border-radius: 20px;
-            text-decoration: none;
-            color: #5f6368;
-            font-size: 14px;
+        .hero-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.5;
+        }
+
+        .hero-value {
+            font-family: var(--font-mono);
+            font-size: 32px;
             font-weight: 500;
-            transition: all 0.2s;
+            color: var(--text-primary);
+            letter-spacing: -1px;
+            line-height: 1.1;
         }
 
-        .nav-tab:hover {
-            background: #f1f3f4;
+        .hero-value.positive {
+            color: var(--accent-success);
         }
 
-        .nav-tab.active {
-            background: #e8f0fe;
-            color: #1a73e8;
+        .hero-value.negative {
+            color: var(--accent-danger);
         }
 
-        /* Main container */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
+        .hero-subvalue {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 8px;
         }
 
-        /* Stats cards */
+        /* Stats grid - smaller stats */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(6, 1fr);
             gap: 16px;
-            margin-bottom: 24px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         .stat-card {
-            background: #fff;
-            border-radius: 8px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
             padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
         }
 
-        .stat-card.highlight {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-        }
-
-        .stat-card.highlight .stat-label {
-            color: rgba(255,255,255,0.8);
-        }
-
-        .stat-card.highlight .stat-value {
-            color: #fff;
+        .stat-card:hover {
+            border-color: var(--accent-primary);
         }
 
         .stat-label {
             font-size: 12px;
-            color: #5f6368;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-weight: 500;
+            color: var(--text-muted);
             margin-bottom: 8px;
         }
 
         .stat-value {
-            font-size: 28px;
-            font-weight: 600;
-            color: #202124;
+            font-family: var(--font-mono);
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
         }
 
-        .stat-value.positive {
-            color: #34a853;
-        }
-
-        .stat-value.negative {
-            color: #ea4335;
-        }
-
-        .stat-value.small {
-            font-size: 22px;
-        }
-
-        .stat-subvalue {
-            font-size: 12px;
-            color: #5f6368;
-            margin-top: 4px;
-        }
-
-        .section-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #5f6368;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-            margin-top: 8px;
-        }
+        .stat-value.positive { color: var(--accent-success); }
+        .stat-value.negative { color: var(--accent-danger); }
 
         /* Charts section */
-        .charts-grid {
+        .charts-row {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 24px;
-            margin-bottom: 24px;
+            margin-bottom: 32px;
         }
 
         @media (max-width: 1024px) {
-            .charts-grid {
+            .charts-row {
                 grid-template-columns: 1fr;
             }
         }
 
         .chart-card {
-            background: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
         }
 
         .chart-title {
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 16px;
-            color: #202124;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .chart-container {
             position: relative;
-            height: 300px;
+            height: 280px;
         }
 
-        /* Monthly table */
+        /* Year selector */
+        .year-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: var(--font-sans);
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .year-select:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .year-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Table */
         .table-card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
             overflow: hidden;
+            margin-bottom: 32px;
         }
 
         .table-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .table-title {
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .year-select {
-            padding: 6px 12px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         table {
@@ -205,217 +444,344 @@
             border-collapse: collapse;
         }
 
-        th, td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
         th {
-            background: #f8f9fa;
-            font-weight: 500;
-            font-size: 12px;
-            color: #5f6368;
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
         }
 
         td {
+            padding: 14px 20px;
             font-size: 14px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
         }
 
-        tr:hover {
-            background: #f8f9fa;
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(99, 102, 241, 0.02);
         }
 
         .text-right {
             text-align: right;
         }
 
-        .positive {
-            color: #34a853;
+        td.positive { color: var(--accent-success); font-weight: 500; }
+        td.negative { color: var(--accent-danger); font-weight: 500; }
+
+        .table-mono {
+            font-family: var(--font-mono);
+            font-size: 13px;
         }
 
-        .negative {
-            color: #ea4335;
+        tr.totals-row {
+            background: var(--bg-tertiary);
+        }
+
+        tr.totals-row td {
+            font-weight: 600;
+            border-bottom: none;
         }
 
         /* Batches section */
         .batches-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 16px;
-            margin-top: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
         }
 
         .batch-card {
-            background: #fff;
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .batch-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .batch-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
         }
 
         .batch-name {
+            font-size: 15px;
             font-weight: 600;
-            font-size: 16px;
-            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .roi-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+
+        .roi-badge.high {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-success);
+        }
+
+        .roi-badge.medium {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-warning);
+        }
+
+        .roi-badge.low {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-danger);
         }
 
         .batch-stats {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
         }
 
         .batch-stat {
-            font-size: 13px;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
         }
 
         .batch-stat-label {
-            color: #5f6368;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
         }
 
         .batch-stat-value {
+            font-family: var(--font-mono);
+            font-size: 14px;
             font-weight: 500;
+            color: var(--text-primary);
         }
 
-        .roi-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-muted);
         }
 
-        .roi-badge.high {
-            background: #e6f4ea;
-            color: #137333;
-        }
-
-        .roi-badge.medium {
-            background: #fef7e0;
-            color: #b06000;
-        }
-
-        .roi-badge.low {
-            background: #fce8e6;
-            color: #c5221f;
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
         }
 
         /* Loading state */
         .loading {
             text-align: center;
             padding: 40px;
-            color: #5f6368;
+            color: var(--text-muted);
         }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-card, .stat-card, .chart-card, .table-card, .batch-card {
+            animation: fadeIn 0.4s ease backwards;
+        }
+
+        .hero-card:nth-child(1) { animation-delay: 0.05s; }
+        .hero-card:nth-child(2) { animation-delay: 0.1s; }
+        .hero-card:nth-child(3) { animation-delay: 0.15s; }
+        .hero-card:nth-child(4) { animation-delay: 0.2s; }
+
+        .stats-grid .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stats-grid .stat-card:nth-child(2) { animation-delay: 0.12s; }
+        .stats-grid .stat-card:nth-child(3) { animation-delay: 0.14s; }
+        .stats-grid .stat-card:nth-child(4) { animation-delay: 0.16s; }
+        .stats-grid .stat-card:nth-child(5) { animation-delay: 0.18s; }
+        .stats-grid .stat-card:nth-child(6) { animation-delay: 0.2s; }
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-title">ReLoomer CRM</div>
-        <div class="nav-tabs">
-            <a href="/overview" class="nav-tab active">Overview</a>
-            <a href="/inventory" class="nav-tab">Inventory</a>
-            <a href="/expenses" class="nav-tab">Expenses</a>
-            <a href="/listings" class="nav-tab">Listings</a>
-        </div>
-    </nav>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">RL</div>
+                <span class="sidebar-title">ReLoomer</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/overview" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    Overview
+                </a>
+                <a href="/inventory" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    Inventory
+                </a>
+                <a href="/expenses" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    Expenses
+                </a>
+                <a href="/listings" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                    </svg>
+                    Listings
+                </a>
+            </nav>
+        </aside>
 
-    <div class="container">
-        <!-- Key Metrics -->
-        <div class="section-title">Key Metrics</div>
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card highlight">
-                <div class="stat-label">ROI</div>
-                <div class="stat-value" id="roi">-</div>
+        <main class="main-content">
+            <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Overview</h1>
+            <p class="page-subtitle">Financial performance and business metrics</p>
+        </div>
+
+        <!-- Hero Stats -->
+        <div class="hero-stats">
+            <div class="hero-card featured">
+                <div class="hero-label">
+                    <svg class="hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    Net Profit
+                </div>
+                <div class="hero-value" id="netProfit">-</div>
+                <div class="hero-subvalue">Total earnings after expenses</div>
             </div>
-            <div class="stat-card highlight">
-                <div class="stat-label">Net Profit</div>
-                <div class="stat-value" id="netProfit">-</div>
+            <div class="hero-card featured">
+                <div class="hero-label">
+                    <svg class="hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 6l-9.5 9.5-5-5L1 18"/>
+                        <path d="M17 6h6v6"/>
+                    </svg>
+                    ROI
+                </div>
+                <div class="hero-value" id="roi">-</div>
+                <div class="hero-subvalue">Return on investment</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">Profit Margin</div>
-                <div class="stat-value" id="profitMargin">-</div>
+            <div class="hero-card">
+                <div class="hero-label">Profit Margin</div>
+                <div class="hero-value" id="profitMargin">-</div>
+                <div class="hero-subvalue">Revenue kept as profit</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">Sell-Through Rate</div>
-                <div class="stat-value" id="sellThroughRate">-</div>
+            <div class="hero-card">
+                <div class="hero-label">Sell-Through Rate</div>
+                <div class="hero-value" id="sellThroughRate">-</div>
+                <div class="hero-subvalue">Items sold vs listed</div>
             </div>
         </div>
 
         <!-- This Month -->
-        <div class="section-title">This Month</div>
-        <div class="stats-grid">
+        <div class="section-header">
+            <span class="section-title">This Month</span>
+        </div>
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
             <div class="stat-card">
                 <div class="stat-label">Revenue</div>
-                <div class="stat-value small" id="thisMonthRevenue">-</div>
+                <div class="stat-value" id="thisMonthRevenue">-</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Profit</div>
-                <div class="stat-value small" id="thisMonthProfit">-</div>
+                <div class="stat-value" id="thisMonthProfit">-</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Items Sold</div>
-                <div class="stat-value small" id="thisMonthItemsSold">-</div>
+                <div class="stat-value" id="thisMonthItemsSold">-</div>
             </div>
         </div>
 
         <!-- Financial Overview -->
-        <div class="section-title">Financial Overview</div>
-        <div class="stats-grid">
+        <div class="section-header">
+            <span class="section-title">Financial Overview</span>
+        </div>
+        <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
             <div class="stat-card">
                 <div class="stat-label">Total Revenue</div>
-                <div class="stat-value small" id="totalRevenue">-</div>
+                <div class="stat-value" id="totalRevenue">-</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Total Profit</div>
-                <div class="stat-value small positive" id="totalProfit">-</div>
+                <div class="stat-value positive" id="totalProfit">-</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Total Investment</div>
-                <div class="stat-value small" id="totalInvestment">-</div>
+                <div class="stat-value" id="totalInvestment">-</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Total Expenses</div>
-                <div class="stat-value small negative" id="totalExpenses">-</div>
+                <div class="stat-value negative" id="totalExpenses">-</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Unsold Stock Value</div>
-                <div class="stat-value small" id="unsoldStockValue">-</div>
+                <div class="stat-label">Unsold Stock</div>
+                <div class="stat-value" id="unsoldStockValue">-</div>
             </div>
         </div>
 
         <!-- Inventory & Performance -->
-        <div class="section-title">Inventory & Performance</div>
+        <div class="section-header">
+            <span class="section-title">Inventory & Performance</span>
+        </div>
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">Items Sold</div>
-                <div class="stat-value small" id="itemsSold">-</div>
+                <div class="stat-value" id="itemsSold">-</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Items Unsold</div>
-                <div class="stat-value small" id="itemsUnsold">-</div>
+                <div class="stat-value" id="itemsUnsold">-</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Avg Sale Price</div>
-                <div class="stat-value small" id="avgSalePrice">-</div>
+                <div class="stat-value" id="avgSalePrice">-</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Avg Purchase Cost</div>
-                <div class="stat-value small" id="avgPurchaseCost">-</div>
+                <div class="stat-label">Avg Cost</div>
+                <div class="stat-value" id="avgPurchaseCost">-</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Avg Profit/Item</div>
-                <div class="stat-value small" id="avgProfit">-</div>
+                <div class="stat-label">Avg Profit</div>
+                <div class="stat-value" id="avgProfit">-</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Avg Days to Sell</div>
-                <div class="stat-value small" id="avgDays">-</div>
+                <div class="stat-value" id="avgDays">-</div>
             </div>
         </div>
 
         <!-- Charts -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <div class="section-title" style="margin: 0;">Charts</div>
+        <div class="section-header">
+            <span class="section-title">Performance Charts</span>
             <select class="year-select" id="chartYearSelect" onchange="loadMonthlyData()">
                 <option value="2026" selected>2026</option>
                 <option value="2025">2025</option>
@@ -423,15 +789,19 @@
                 <option value="2023">2023</option>
             </select>
         </div>
-        <div class="charts-grid">
+        <div class="charts-row">
             <div class="chart-card">
-                <div class="chart-title">Monthly Revenue & Profit</div>
+                <div class="chart-header">
+                    <span class="chart-title">Monthly Revenue & Profit</span>
+                </div>
                 <div class="chart-container">
                     <canvas id="monthlyChart"></canvas>
                 </div>
             </div>
             <div class="chart-card">
-                <div class="chart-title">Cashflow</div>
+                <div class="chart-header">
+                    <span class="chart-title">Cashflow</span>
+                </div>
                 <div class="chart-container">
                     <canvas id="cashflowChart"></canvas>
                 </div>
@@ -441,7 +811,7 @@
         <!-- Monthly Table -->
         <div class="table-card">
             <div class="table-header">
-                <div class="table-title">Monthly Breakdown</div>
+                <span class="table-title">Monthly Breakdown</span>
                 <select class="year-select" id="yearSelect" onchange="syncYearAndLoad()">
                     <option value="2026" selected>2026</option>
                     <option value="2025">2025</option>
@@ -468,21 +838,31 @@
         </div>
 
         <!-- Batch Performance -->
-        <h3 style="margin-top: 32px; margin-bottom: 16px; font-size: 16px; font-weight: 500;">Batch Performance</h3>
+        <div class="section-header">
+            <span class="section-title">Batch Performance</span>
+        </div>
         <div class="batches-grid" id="batchesGrid">
             <div class="loading">Loading batches...</div>
         </div>
+            </div>
+        </main>
     </div>
 
     <script>
         let monthlyChart = null;
         let cashflowChart = null;
 
+        // Chart.js configuration
+        Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+        Chart.defaults.color = '#a1a1aa';
+
         // Format currency
         function formatCurrency(value) {
             return new Intl.NumberFormat('nl-NL', {
                 style: 'currency',
-                currency: 'EUR'
+                currency: 'EUR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
             }).format(value);
         }
 
@@ -492,7 +872,7 @@
                 const response = await fetch('/api/inventory/stats/dashboard');
                 const data = await response.json();
 
-                // Key metrics
+                // Hero metrics
                 document.getElementById('roi').textContent = data.roi.toFixed(1) + '%';
                 document.getElementById('netProfit').textContent = formatCurrency(data.net_profit);
                 document.getElementById('profitMargin').textContent = data.profit_margin.toFixed(1) + '%';
@@ -501,13 +881,13 @@
                 // This month
                 document.getElementById('thisMonthRevenue').textContent = formatCurrency(data.this_month_revenue);
                 document.getElementById('thisMonthProfit').textContent = formatCurrency(data.this_month_profit);
-                document.getElementById('thisMonthProfit').className = 'stat-value small ' + (data.this_month_profit >= 0 ? 'positive' : 'negative');
+                document.getElementById('thisMonthProfit').className = 'stat-value ' + (data.this_month_profit >= 0 ? 'positive' : 'negative');
                 document.getElementById('thisMonthItemsSold').textContent = data.this_month_items_sold;
 
                 // Financial overview
                 document.getElementById('totalRevenue').textContent = formatCurrency(data.total_revenue);
                 document.getElementById('totalProfit').textContent = formatCurrency(data.total_profit);
-                document.getElementById('totalProfit').className = 'stat-value small ' + (data.total_profit >= 0 ? 'positive' : 'negative');
+                document.getElementById('totalProfit').className = 'stat-value ' + (data.total_profit >= 0 ? 'positive' : 'negative');
                 document.getElementById('totalInvestment').textContent = formatCurrency(data.total_investment);
                 document.getElementById('totalExpenses').textContent = formatCurrency(data.total_expenses);
                 document.getElementById('unsoldStockValue').textContent = formatCurrency(data.unsold_stock_value);
@@ -533,7 +913,6 @@
 
         // Load monthly data
         async function loadMonthlyData() {
-            // Sync both year selectors
             const chartYear = document.getElementById('chartYearSelect').value;
             document.getElementById('yearSelect').value = chartYear;
             const year = chartYear;
@@ -547,12 +926,12 @@
                 tbody.innerHTML = data.map(row => `
                     <tr>
                         <td>${row.month} ${row.year}</td>
-                        <td class="text-right">${formatCurrency(row.revenue)}</td>
-                        <td class="text-right ${row.profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.profit)}</td>
-                        <td class="text-right ${row.net_profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.net_profit)}</td>
-                        <td class="text-right ${row.cashflow >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.cashflow)}</td>
-                        <td class="text-right">${row.items_sold}</td>
-                        <td class="text-right ${row.expenses > 0 ? 'negative' : ''}">${formatCurrency(row.expenses)}</td>
+                        <td class="text-right table-mono">${formatCurrency(row.revenue)}</td>
+                        <td class="text-right table-mono ${row.profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.profit)}</td>
+                        <td class="text-right table-mono ${row.net_profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.net_profit)}</td>
+                        <td class="text-right table-mono ${row.cashflow >= 0 ? 'positive' : 'negative'}">${formatCurrency(row.cashflow)}</td>
+                        <td class="text-right table-mono">${row.items_sold}</td>
+                        <td class="text-right table-mono ${row.expenses > 0 ? 'negative' : ''}">${formatCurrency(row.expenses)}</td>
                     </tr>
                 `).join('');
 
@@ -567,18 +946,17 @@
                 }), { revenue: 0, profit: 0, net_profit: 0, cashflow: 0, items_sold: 0, expenses: 0 });
 
                 tbody.innerHTML += `
-                    <tr style="font-weight: 600; background: #f8f9fa;">
-                        <td>Total</td>
-                        <td class="text-right">${formatCurrency(totals.revenue)}</td>
-                        <td class="text-right ${totals.profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.profit)}</td>
-                        <td class="text-right ${totals.net_profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.net_profit)}</td>
-                        <td class="text-right ${totals.cashflow >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.cashflow)}</td>
-                        <td class="text-right">${totals.items_sold}</td>
-                        <td class="text-right negative">${formatCurrency(totals.expenses)}</td>
+                    <tr class="totals-row">
+                        <td><strong>Total</strong></td>
+                        <td class="text-right table-mono">${formatCurrency(totals.revenue)}</td>
+                        <td class="text-right table-mono ${totals.profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.profit)}</td>
+                        <td class="text-right table-mono ${totals.net_profit >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.net_profit)}</td>
+                        <td class="text-right table-mono ${totals.cashflow >= 0 ? 'positive' : 'negative'}">${formatCurrency(totals.cashflow)}</td>
+                        <td class="text-right table-mono">${totals.items_sold}</td>
+                        <td class="text-right table-mono negative">${formatCurrency(totals.expenses)}</td>
                     </tr>
                 `;
 
-                // Update charts
                 updateCharts(data);
             } catch (error) {
                 console.error('Error loading monthly data:', error);
@@ -587,7 +965,7 @@
 
         // Update charts
         function updateCharts(data) {
-            const labels = data.map(d => d.month);
+            const labels = data.map(d => d.month.substring(0, 3));
             const revenue = data.map(d => d.revenue);
             const grossProfit = data.map(d => d.profit);
             const netProfit = data.map(d => d.net_profit);
@@ -603,20 +981,23 @@
                         {
                             label: 'Revenue',
                             data: revenue,
-                            backgroundColor: '#1a73e8',
-                            borderRadius: 4
+                            backgroundColor: '#6366f1',
+                            borderRadius: 4,
+                            barPercentage: 0.7
                         },
                         {
                             label: 'Gross Profit',
                             data: grossProfit,
-                            backgroundColor: '#34a853',
-                            borderRadius: 4
+                            backgroundColor: '#10b981',
+                            borderRadius: 4,
+                            barPercentage: 0.7
                         },
                         {
                             label: 'Net Profit',
                             data: netProfit,
-                            backgroundColor: '#fbbc04',
-                            borderRadius: 4
+                            backgroundColor: '#f59e0b',
+                            borderRadius: 4,
+                            barPercentage: 0.7
                         }
                     ]
                 },
@@ -625,12 +1006,29 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'top'
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 8,
+                                boxHeight: 8,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 16
+                            }
                         }
                     },
                     scales: {
+                        x: {
+                            grid: { display: false },
+                            border: { display: false }
+                        },
                         y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            grid: { color: '#e4e4e7' },
+                            border: { display: false },
+                            ticks: {
+                                callback: value => value >= 1000 ? (value/1000) + 'k' : value
+                            }
                         }
                     }
                 }
@@ -645,23 +1043,33 @@
                     datasets: [{
                         label: 'Cashflow',
                         data: cashflow,
-                        borderColor: '#1a73e8',
-                        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
                         fill: true,
-                        tension: 0.4
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#6366f1',
+                        pointBorderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false
-                        }
+                        legend: { display: false }
                     },
                     scales: {
+                        x: {
+                            grid: { display: false },
+                            border: { display: false }
+                        },
                         y: {
-                            beginAtZero: false
+                            grid: { color: '#e4e4e7' },
+                            border: { display: false },
+                            ticks: {
+                                callback: value => value >= 1000 ? (value/1000) + 'k' : value
+                            }
                         }
                     }
                 }
@@ -677,17 +1085,22 @@
                 const grid = document.getElementById('batchesGrid');
 
                 if (batches.length === 0) {
-                    grid.innerHTML = '<div class="loading">No batches yet. Add items via the Inventory page.</div>';
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📦</div>
+                            <p>No batches yet. Add items via the Inventory page.</p>
+                        </div>
+                    `;
                     return;
                 }
 
-                grid.innerHTML = batches.map(batch => {
+                grid.innerHTML = batches.map((batch, i) => {
                     const roiClass = batch.roi > 100 ? 'high' : batch.roi > 50 ? 'medium' : 'low';
                     return `
-                        <div class="batch-card">
-                            <div class="batch-name">
-                                ${batch.name}
-                                <span class="roi-badge ${roiClass}">${batch.roi.toFixed(1)}% ROI</span>
+                        <div class="batch-card" style="animation-delay: ${0.1 + i * 0.05}s">
+                            <div class="batch-header">
+                                <span class="batch-name">${batch.name}</span>
+                                <span class="roi-badge ${roiClass}">${batch.roi.toFixed(1)}%</span>
                             </div>
                             <div class="batch-stats">
                                 <div class="batch-stat">
@@ -696,7 +1109,7 @@
                                 </div>
                                 <div class="batch-stat">
                                     <div class="batch-stat-label">Items</div>
-                                    <div class="batch-stat-value">${batch.items_sold}/${batch.item_count} sold</div>
+                                    <div class="batch-stat-value">${batch.items_sold}/${batch.item_count}</div>
                                 </div>
                                 <div class="batch-stat">
                                     <div class="batch-stat-label">Revenue</div>

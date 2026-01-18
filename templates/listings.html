@@ -3,8 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Listings - CRM</title>
+    <title>Listings - ReLoomer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-primary: #fafaf9;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f5f5f4;
+            --text-primary: #18181b;
+            --text-secondary: #52525b;
+            --text-muted: #a1a1aa;
+            --border-color: #e4e4e7;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,146 +38,280 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
         }
 
-        .nav {
-            background: #fff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 12px 24px;
+        /* Layout */
+        .app-layout {
             display: flex;
-            align-items: center;
-            gap: 24px;
-            position: sticky;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
             top: 0;
+            left: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             z-index: 100;
         }
 
-        .nav-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1a73e8;
-        }
-
-        .nav-tabs {
+        .sidebar-brand {
+            padding: 24px;
             display: flex;
-            gap: 8px;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .nav-tab {
-            padding: 8px 16px;
-            border-radius: 20px;
+        .sidebar-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
             text-decoration: none;
-            color: #5f6368;
+            color: var(--text-secondary);
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
-        .nav-tab:hover {
-            background: #f1f3f4;
+        .nav-item:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
         }
 
-        .nav-tab.active {
-            background: #e8f0fe;
-            color: #1a73e8;
+        .nav-item.active {
+            color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            opacity: 0.7;
+        }
+
+        .nav-item.active svg {
+            opacity: 1;
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            margin-left: 240px;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 24px;
+            padding: 32px;
         }
 
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .sidebar-nav {
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 12px;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* Page header */
         .page-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
+            align-items: flex-start;
+            margin-bottom: 32px;
         }
 
-        .page-title {
-            font-size: 24px;
-            font-weight: 600;
+        .page-header-content h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
         }
 
+        .page-header-content p {
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Buttons */
         .btn {
-            padding: 10px 20px;
+            padding: 10px 18px;
             border: none;
-            border-radius: 4px;
+            border-radius: var(--radius-sm);
             font-size: 14px;
             font-weight: 500;
+            font-family: var(--font-sans);
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
         .btn-primary {
-            background: #1a73e8;
-            color: #fff;
+            background: var(--accent-primary);
+            color: white;
         }
 
         .btn-primary:hover {
-            background: #1557b0;
+            background: #5558e8;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
         .btn-secondary {
-            background: #fff;
-            color: #5f6368;
-            border: 1px solid #dadce0;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
         }
 
         .btn-secondary:hover {
-            background: #f1f3f4;
+            background: var(--bg-tertiary);
+            border-color: var(--text-muted);
         }
 
         .btn-success {
-            background: #34a853;
-            color: #fff;
+            background: var(--accent-success);
+            color: white;
         }
 
         .btn-success:hover {
-            background: #2d9249;
+            background: #0da372;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-primary);
         }
 
         /* Platform cards */
         .platforms-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 32px;
         }
 
+        @media (max-width: 1200px) {
+            .platforms-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .platforms-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .platform-card {
-            background: #fff;
-            border-radius: 12px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
             padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .platform-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-md);
         }
 
         .platform-header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }
 
         .platform-logo {
-            width: 48px;
-            height: 48px;
-            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
         }
 
         .platform-logo.vinted {
@@ -163,7 +323,7 @@
         }
 
         .platform-logo.website {
-            background: linear-gradient(135deg, #6C5CE7 0%, #5541D7 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         }
 
         .platform-logo.depop {
@@ -171,22 +331,38 @@
         }
 
         .platform-info h3 {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 600;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .platform-status {
-            font-size: 13px;
-            color: #5f6368;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .platform-status .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .platform-status.connected .dot {
+            background: var(--accent-success);
+        }
+
+        .platform-status.disconnected .dot {
+            background: var(--text-muted);
         }
 
         .platform-status.connected {
-            color: #34a853;
+            color: var(--accent-success);
         }
 
         .platform-status.disconnected {
-            color: #ea4335;
+            color: var(--text-muted);
         }
 
         .platform-stats {
@@ -196,56 +372,91 @@
         }
 
         .platform-stat {
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 8px;
+            background: var(--bg-tertiary);
+            padding: 14px;
+            border-radius: var(--radius-sm);
         }
 
         .platform-stat-value {
-            font-size: 20px;
-            font-weight: 600;
+            font-family: var(--font-mono);
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 2px;
         }
 
         .platform-stat-label {
-            font-size: 12px;
-            color: #5f6368;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .platform-actions {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-top: auto;
         }
 
         .platform-actions .btn {
             flex: 1;
             justify-content: center;
+            padding: 10px 14px;
         }
 
-        /* Products section */
+        /* Section */
         .section {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
             margin-bottom: 24px;
+            overflow: hidden;
         }
 
         .section-header {
             padding: 20px 24px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .section-title {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 600;
+            color: var(--text-primary);
         }
 
         .section-actions {
             display: flex;
             gap: 12px;
+            align-items: center;
+        }
+
+        /* Form elements */
+        .form-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: var(--font-sans);
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .form-select:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
         /* Product list */
@@ -257,8 +468,9 @@
             display: flex;
             align-items: center;
             padding: 16px 24px;
-            border-bottom: 1px solid #e8eaed;
+            border-bottom: 1px solid var(--border-color);
             gap: 16px;
+            transition: all 0.15s ease;
         }
 
         .product-item:last-child {
@@ -266,42 +478,53 @@
         }
 
         .product-item:hover {
-            background: #f8f9fa;
+            background: rgba(99, 102, 241, 0.02);
         }
 
         .product-checkbox {
             cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-primary);
         }
 
         .product-image {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
-            background: #e8eaed;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-tertiary);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #9aa0a6;
-            font-size: 24px;
+            color: var(--text-muted);
+            font-size: 20px;
+            flex-shrink: 0;
         }
 
         .product-details {
             flex: 1;
+            min-width: 0;
         }
 
         .product-title {
             font-weight: 500;
+            font-size: 14px;
+            color: var(--text-primary);
             margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .product-meta {
             font-size: 13px;
-            color: #5f6368;
+            color: var(--text-muted);
         }
 
         .product-price {
-            font-size: 18px;
-            font-weight: 600;
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 500;
             min-width: 80px;
             text-align: right;
         }
@@ -309,19 +532,20 @@
         .product-platforms {
             display: flex;
             gap: 6px;
-            min-width: 120px;
+            min-width: 140px;
         }
 
         .platform-badge {
             width: 28px;
             height: 28px;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            transition: all 0.2s ease;
         }
 
         .platform-badge.active {
@@ -329,12 +553,12 @@
         }
 
         .platform-badge.inactive {
-            opacity: 0.3;
+            opacity: 0.25;
         }
 
         .platform-badge.vinted { background: #09B1BA; }
         .platform-badge.marktplaats { background: #FF6B35; }
-        .platform-badge.website { background: #6C5CE7; }
+        .platform-badge.website { background: #6366f1; }
         .platform-badge.depop { background: #FF2400; }
 
         .product-actions {
@@ -342,45 +566,31 @@
             gap: 8px;
         }
 
-        .btn-icon {
-            width: 36px;
-            height: 36px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            border: 1px solid #dadce0;
-            background: #fff;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .btn-icon:hover {
-            background: #f1f3f4;
-        }
-
         /* Empty state */
         .empty-state {
-            padding: 60px 24px;
+            padding: 80px 24px;
             text-align: center;
-            color: #5f6368;
         }
 
         .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+            font-size: 56px;
+            margin-bottom: 20px;
+            opacity: 0.6;
         }
 
         .empty-state-title {
             font-size: 18px;
-            font-weight: 500;
+            font-weight: 600;
+            color: var(--text-primary);
             margin-bottom: 8px;
-            color: #202124;
         }
 
         .empty-state-text {
+            color: var(--text-muted);
             margin-bottom: 24px;
+            max-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         /* Modal */
@@ -391,10 +601,12 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            padding: 24px;
         }
 
         .modal-overlay.active {
@@ -402,44 +614,67 @@
         }
 
         .modal {
-            background: #fff;
-            border-radius: 12px;
-            padding: 24px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 28px;
             width: 100%;
-            max-width: 600px;
+            max-width: 560px;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: modalIn 0.2s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .modal-title {
             font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            letter-spacing: -0.3px;
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .form-label {
             display: block;
             font-size: 13px;
             font-weight: 500;
-            color: #5f6368;
-            margin-bottom: 6px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
         }
 
-        .form-input, .form-textarea, .form-select {
+        .form-input, .form-textarea {
             width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
+            padding: 12px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
             font-size: 14px;
+            font-family: var(--font-sans);
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            transition: all 0.2s ease;
         }
 
         .form-input:focus, .form-textarea:focus, .form-select:focus {
             outline: none;
-            border-color: #1a73e8;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: var(--text-muted);
         }
 
         .form-textarea {
@@ -455,105 +690,143 @@
 
         .checkbox-group {
             display: flex;
-            gap: 16px;
+            gap: 20px;
             flex-wrap: wrap;
         }
 
         .checkbox-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             cursor: pointer;
+            font-size: 14px;
         }
 
         .checkbox-item input {
             width: 18px;
             height: 18px;
+            accent-color: var(--accent-primary);
         }
 
         .modal-actions {
             display: flex;
             justify-content: flex-end;
             gap: 12px;
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid #e0e0e0;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
         }
 
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 24px;
+            bottom: 32px;
             left: 50%;
             transform: translateX(-50%);
-            background: #323232;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 8px;
+            background: var(--text-primary);
+            color: white;
+            padding: 14px 24px;
+            border-radius: var(--radius-md);
             font-size: 14px;
+            font-weight: 500;
             z-index: 1001;
             display: none;
+            box-shadow: var(--shadow-lg);
         }
 
         .toast.show {
             display: block;
-            animation: fadeIn 0.3s;
+            animation: toastIn 0.3s ease;
         }
 
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Sync status */
-        .sync-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: #5f6368;
+        .platform-card, .section {
+            animation: fadeIn 0.4s ease backwards;
         }
 
-        .sync-indicator.syncing {
-            color: #1a73e8;
-        }
-
-        .sync-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #34a853;
-        }
-
-        .sync-dot.pending {
-            background: #fbbc04;
-        }
-
-        .sync-dot.error {
-            background: #ea4335;
-        }
+        .platform-card:nth-child(1) { animation-delay: 0.05s; }
+        .platform-card:nth-child(2) { animation-delay: 0.1s; }
+        .platform-card:nth-child(3) { animation-delay: 0.15s; }
+        .platform-card:nth-child(4) { animation-delay: 0.2s; }
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-title">ReLoomer CRM</div>
-        <div class="nav-tabs">
-            <a href="/overview" class="nav-tab">Overview</a>
-            <a href="/inventory" class="nav-tab">Inventory</a>
-            <a href="/expenses" class="nav-tab">Expenses</a>
-            <a href="/listings" class="nav-tab active">Listings</a>
-        </div>
-    </nav>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">RL</div>
+                <span class="sidebar-title">ReLoomer</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/overview" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    Overview
+                </a>
+                <a href="/inventory" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    Inventory
+                </a>
+                <a href="/expenses" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    Expenses
+                </a>
+                <a href="/listings" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                    </svg>
+                    Listings
+                </a>
+            </nav>
+        </aside>
 
-    <div class="container">
+        <main class="main-content">
+            <div class="container">
         <div class="page-header">
-            <h1 class="page-title">Product Listings</h1>
-            <div style="display: flex; gap: 12px;">
+            <div class="page-header-content">
+                <h1>Product Listings</h1>
+                <p>Manage products across all platforms</p>
+            </div>
+            <div class="page-actions">
                 <button class="btn btn-secondary" onclick="syncAll()">
-                    <span>↻</span> Sync All
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6"/>
+                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                    </svg>
+                    Sync All
                 </button>
                 <button class="btn btn-primary" onclick="openAddProductModal()">
-                    <span>+</span> Add Product
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Add Product
                 </button>
             </div>
         </div>
@@ -565,13 +838,16 @@
                     <div class="platform-logo vinted">V</div>
                     <div class="platform-info">
                         <h3>Vinted</h3>
-                        <div class="platform-status disconnected">● Not connected</div>
+                        <div class="platform-status disconnected">
+                            <span class="dot"></span>
+                            Not connected
+                        </div>
                     </div>
                 </div>
                 <div class="platform-stats">
                     <div class="platform-stat">
                         <div class="platform-stat-value" id="vintedListings">0</div>
-                        <div class="platform-stat-label">Active Listings</div>
+                        <div class="platform-stat-label">Listings</div>
                     </div>
                     <div class="platform-stat">
                         <div class="platform-stat-value" id="vintedSales">0</div>
@@ -589,13 +865,16 @@
                     <div class="platform-logo marktplaats">M</div>
                     <div class="platform-info">
                         <h3>Marktplaats</h3>
-                        <div class="platform-status disconnected">● Not connected</div>
+                        <div class="platform-status disconnected">
+                            <span class="dot"></span>
+                            Not connected
+                        </div>
                     </div>
                 </div>
                 <div class="platform-stats">
                     <div class="platform-stat">
                         <div class="platform-stat-value" id="marktplaatsListings">0</div>
-                        <div class="platform-stat-label">Active Listings</div>
+                        <div class="platform-stat-label">Listings</div>
                     </div>
                     <div class="platform-stat">
                         <div class="platform-stat-value" id="marktplaatsSales">0</div>
@@ -613,13 +892,16 @@
                     <div class="platform-logo website">W</div>
                     <div class="platform-info">
                         <h3>Your Website</h3>
-                        <div class="platform-status disconnected">● Not configured</div>
+                        <div class="platform-status disconnected">
+                            <span class="dot"></span>
+                            Not configured
+                        </div>
                     </div>
                 </div>
                 <div class="platform-stats">
                     <div class="platform-stat">
                         <div class="platform-stat-value" id="websiteListings">0</div>
-                        <div class="platform-stat-label">Active Listings</div>
+                        <div class="platform-stat-label">Listings</div>
                     </div>
                     <div class="platform-stat">
                         <div class="platform-stat-value" id="websiteSales">0</div>
@@ -627,7 +909,7 @@
                     </div>
                 </div>
                 <div class="platform-actions">
-                    <button class="btn btn-secondary" onclick="configureWebsite()">Configure API</button>
+                    <button class="btn btn-secondary" onclick="configureWebsite()">Configure</button>
                     <button class="btn btn-secondary" onclick="pushToWebsite()">Push All</button>
                 </div>
             </div>
@@ -637,13 +919,16 @@
                     <div class="platform-logo depop">D</div>
                     <div class="platform-info">
                         <h3>Depop</h3>
-                        <div class="platform-status disconnected">● Not connected</div>
+                        <div class="platform-status disconnected">
+                            <span class="dot"></span>
+                            Not connected
+                        </div>
                     </div>
                 </div>
                 <div class="platform-stats">
                     <div class="platform-stat">
                         <div class="platform-stat-value" id="depopListings">0</div>
-                        <div class="platform-stat-label">Active Listings</div>
+                        <div class="platform-stat-label">Listings</div>
                     </div>
                     <div class="platform-stat">
                         <div class="platform-stat-value" id="depopSales">0</div>
@@ -660,9 +945,9 @@
         <!-- Products Section -->
         <div class="section">
             <div class="section-header">
-                <div class="section-title">Products Ready to List</div>
+                <span class="section-title">Products Ready to List</span>
                 <div class="section-actions">
-                    <select class="form-select" style="width: auto;" id="productFilter" onchange="filterProducts()">
+                    <select class="form-select" id="productFilter" onchange="filterProducts()">
                         <option value="all">All Products</option>
                         <option value="unlisted">Not Listed</option>
                         <option value="partial">Partially Listed</option>
@@ -684,22 +969,34 @@
         <!-- Bulk Upload Section -->
         <div class="section">
             <div class="section-header">
-                <div class="section-title">Bulk Upload</div>
+                <span class="section-title">Bulk Upload</span>
             </div>
             <div style="padding: 24px;">
-                <p style="color: #5f6368; margin-bottom: 16px;">
+                <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">
                     Upload multiple products at once from a CSV file or spreadsheet.
                 </p>
                 <div style="display: flex; gap: 12px;">
                     <button class="btn btn-secondary" onclick="downloadTemplate()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7,10 12,15 17,10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
                         Download Template
                     </button>
                     <button class="btn btn-primary" onclick="openBulkUploadModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="17,8 12,3 7,8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
                         Upload Products
                     </button>
                 </div>
             </div>
         </div>
+            </div>
+        </main>
     </div>
 
     <!-- Add Product Modal -->
@@ -716,7 +1013,7 @@
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Price (€) *</label>
+                    <label class="form-label">Price *</label>
                     <input type="number" class="form-input" id="productPrice" step="0.01" placeholder="25.00">
                 </div>
                 <div class="form-group">
@@ -731,7 +1028,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Condition</label>
-                    <select class="form-select" id="productCondition">
+                    <select class="form-select form-input" id="productCondition">
                         <option value="new">New with tags</option>
                         <option value="like_new">Like new</option>
                         <option value="good" selected>Good</option>
@@ -741,7 +1038,7 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Category</label>
-                <select class="form-select" id="productCategory">
+                <select class="form-select form-input" id="productCategory">
                     <option value="">Select category...</option>
                     <option value="tops">Tops</option>
                     <option value="bottoms">Bottoms</option>
@@ -782,7 +1079,7 @@
     <div class="modal-overlay" id="bulkUploadModal">
         <div class="modal">
             <div class="modal-title">Bulk Upload Products</div>
-            <p style="color: #5f6368; margin-bottom: 16px;">
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">
                 Upload a CSV file with your products. Required columns: title, price.<br>
                 Optional: description, size, brand, condition, category
             </p>
@@ -950,7 +1247,6 @@
 
                     if (platforms.length > 0) {
                         showToast(`Listing on ${platforms.length} platform(s)...`);
-                        // API call would go here
                     }
 
                     loadProducts();
@@ -963,7 +1259,7 @@
             }
         }
 
-        // Platform functions (placeholders)
+        // Platform functions
         function connectPlatform(platform) {
             showToast(`Connect to ${platform} - Coming soon!`);
         }
@@ -1019,7 +1315,6 @@
         }
 
         function filterProducts() {
-            // Filter logic - placeholder
             renderProducts();
         }
 
@@ -1044,7 +1339,6 @@
                 const response = await fetch('/api/sync/stats');
                 const stats = await response.json();
 
-                // Update platform stats
                 if (stats.by_platform) {
                     document.getElementById('vintedListings').textContent = stats.by_platform.vinted || 0;
                     document.getElementById('marktplaatsListings').textContent = stats.by_platform.marktplaats || 0;
